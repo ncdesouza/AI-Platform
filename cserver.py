@@ -1,11 +1,9 @@
+from time import sleep
 import PodSixNet.Channel
 import PodSixNet.Server
-from time import sleep
-import random
 
 
 class ClientChannel(PodSixNet.Channel.Channel):
-
     # Prints moves to terminal
     def Network(self, data):
         print data
@@ -23,8 +21,8 @@ class ClientChannel(PodSixNet.Channel.Channel):
     def Close(self):
         self._server.close(self.gameid)
 
-class CramServer(PodSixNet.Server.Server):
 
+class CramServer(PodSixNet.Server.Server):
     channelClass = ClientChannel
 
     def __init__(self, *args, **kwargs):
@@ -63,54 +61,103 @@ class CramServer(PodSixNet.Server.Server):
             pass
 
     def tick(self):
-        index = 0
         gameOver = True
         for game in self.games:
             for e in range(0, 5):
                 for y in range(0, 5):
                     if y is 4:
-                        if e is not 4 and not game.board[e][y] and not game.board[e+1][y]:
+                        if e is not 4 and not game.board[e][y] and not game.board[e + 1][y]:
                             gameOver = False
                             break
 
                     elif e is 4:
 
-                        if y is not 4 and not game.board[e][y] and not game.board[e][y+1]:
+                        if y is not 4 and not game.board[e][y] and not game.board[e][y + 1]:
                             gameOver = False
                             break
 
-                    elif not game.board[e][y] and not game.board[e+1][y]:
+                    elif not game.board[e][y] and not game.board[e + 1][y]:
                         gameOver = False
                         break
 
-                    elif not game.board[e][y] and not game.board[e][y+1]:
+                    elif not game.board[e][y] and not game.board[e][y + 1]:
                         gameOver = False
                         break
 
                 if not gameOver:
-                        break
+                    break
 
         if gameOver:
             index = 0
             for game in self.games:
                 game.player1.Send({"action": "gameover", "torf": True})
                 game.player0.Send({"action": "gameover", "torf": True})
+        #
         # index = 0
+        # change = 3
         # for game in self.games:
-        #     change = 3
-        #     for time in range(2):
-        #         for y in range(5):
-        #             for x in range(5):
-        #                 if game.board[y][x]:
-        #                     # if game.board[y+1][x] or game[y][x+1]:
+        #     for y in range(0, 5):
+        #         for x in range(0, 5):
+        #             if x is 4:
+        #                 if y is not 4 and game.board[y][x] and game.board[y + 1][x] and not game.owner[y][x] and not \
+        #                         game.owner[y + 1][x]:
         #                     if self.games[index].turn == 0:
-        #                         game.player1.Send({"action": "win", "x1": x, "y1": y})
-        #                         game.player0.Send({"action": "lose", "x1": x, "y1": y})
+        #                         self.games[index].owner[y][x] = 2
+        #                         self.games[index].owner[y + 1][x] = 2
+        #                         game.player1.Send({"action": "win", "x1": x, "y1": y, "x2": x, "y2": y+1})
+        #                         game.player0.Send({"action": "lose", "x1": x, "y1": y, "x2": x+1, "y2": y+1})
         #                         change = 1
         #                     else:
-        #                         game.player0.Send({"action": "win", "x1": x, "y1": y})
-        #                         game.player1.Send({"action": "lose", "x1": x, "y1": y})
+        #                         self.games[index].owner[y][x] = 1
+        #                         self.games[index].owner[y + 1][x] = 1
+        #                         game.player0.Send({"action": "win", "x1": x, "y1": y, "x2": x, "y2": y+1})
+        #                         game.player1.Send({"action": "lose", "x1": x, "y1": y, "x2": x, "y2": y+1})
         #                         change = 0
+        #             elif y is 4:
+        #                 if x is not 4 and game.board[y][x] and game.board[y][x + 1] and not game.owner[y][x] and not \
+        #                         game.board[y][x + 1]:
+        #                     if self.games[index].turn == 0:
+        #                         self.games[index].owner[y][x] = 2
+        #                         self.games[index].owner[y][x + 1] = 2
+        #                         game.player1.Send({"action": "win", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                         game.player0.Send({"action": "lose", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                         change = 1
+        #                     else:
+        #                         self.games[index].owner[y][x] = 1
+        #                         self.games[index].owner[y][x + 1] = 1
+        #                         game.player0.Send({"action": "win", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                         game.player1.Send({"action": "lose", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                         change = 0
+        #
+        #             elif game.board[y][x] and game.board[y + 1][x] and not game.owner[y][x] and not game.owner[y + 1][
+        #                 x]:
+        #                 if self.games[index].turn == 0:
+        #                     self.games[index].owner[y][x] = 2
+        #                     self.games[index].owner[y + 1][x] = 2
+        #                     game.player1.Send({"action": "win", "x1": x, "y1": y, "x2": x, "y2": y+1})
+        #                     game.player0.Send({"action": "lose", "x1": x, "y1": y, "x2": x, "y2": y+1})
+        #                     change = 1
+        #                 else:
+        #                     self.games[index].owner[y][x] = 1
+        #                     self.games[index].owner[y + 1][x] = 1
+        #                     game.player0.Send({"action": "win", "x1": x, "y1": y, "x2": x, "y2": y+1})
+        #                     game.player1.Send({"action": "lose", "x1": x, "y1": y, "x2": x, "y2": y+1})
+        #                     change = 0
+        #
+        #             elif game.board[y][x] and game.board[y][x + 1] and not game.owner[y][x] and not game.owner[y][
+        #                         x + 1]:
+        #                 if self.games[index].turn == 0:
+        #                     self.games[index].owner[y][x] = 2
+        #                     self.games[index].owner[y][x+1] = 2
+        #                     game.player1.Send({"action": "win", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                     game.player0.Send({"action": "lose", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                     change = 1
+        #                 else:
+        #                     self.games[index].owner[y][x] = 1
+        #                     self.games[index].owner[y][x+1] = 1
+        #                     game.player0.Send({"action": "win", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                     game.player1.Send({"action": "lose", "x1": x, "y1": y, "x2": x+1, "y2": y})
+        #                     change = 0
         #     self.games[index].turn = change if change != 3 else self.games[index].turn
         #     game.player1.Send({"action": "yourturn", "torf": True if self.games[index].turn == 1 else False})
         #     game.player0.Send({"action": "yourturn", "torf": True if self.games[index].turn == 0 else False})
@@ -123,6 +170,7 @@ class Game:
         # Track which players turn
         self.turn = 0
         self.board = [[False for x in range(5)] for y in range(5)]
+        self.owner = [[False for x in range(5)] for y in range(5)]
         # initialize the players
         self.player0 = player0
         self.player1 = None
@@ -135,15 +183,14 @@ class Game:
             self.turn = 0 if self.turn else 1
             self.player1.Send({"action": "yourturn", "torf": True if self.turn == 1 else False})
             self.player0.Send({"action": "yourturn", "torf": True if self.turn == 0 else False})
-            #place block in game
+            # place block in game
             self.board[y1][x1] = True
             self.board[y2][x2] = True
-        #send data and turn data to each player
+            self.owner[y1][x1] = self.turn
+            self.owner[y2][x2] = self.turn
+        # send data and turn data to each player
         self.player0.Send(data)
         self.player1.Send(data)
-
-
-
 
 
 print "Starting Crunch-Platform..."

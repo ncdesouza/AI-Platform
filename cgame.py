@@ -1,9 +1,7 @@
 import pygame
-import math
-from PodSixNet.Connection import ConnectionListener, connection
 from time import sleep
 import random
-import thread
+from PodSixNet.Connection import ConnectionListener, connection
 
 
 class CramGame(ConnectionListener):
@@ -19,6 +17,13 @@ class CramGame(ConnectionListener):
         y2 = data["y2"]
         self.board[y1][x1] = True
         self.board[y2][x2] = True
+        num = data["num"]
+        if num == self.me:
+            self.owner[y1][y2] = "win"
+            self.owner[y2][x2] = "win"
+        else:
+            self.owner[y1][y2] = "lose"
+            self.owner[y2][x2] = "lose"
 
 
     def Network_close(self, data):
@@ -31,6 +36,7 @@ class CramGame(ConnectionListener):
     def __init__(self):
         self.justplaced = 10
         self.board = [[False for x in range(5)] for y in range(5)]
+        self.owner = [[False for x in range(5)] for y in range(5)]
         self.initGraphics()
 
         pygame.init()
@@ -85,8 +91,10 @@ class CramGame(ConnectionListener):
                 self.screen.blit(self.separators, [x * 64, y * 64])
         for x in range(5):
             for y in range(5):
-                if self.board[y][x]:
-                    self.screen.blit(self.greenplayer, [(x * 64 + 5), (y) * 64 + 5])
+                if self.board[y][x] == "win":
+                    self.screen.blit(self.marker, [(x * 64 + 5), (y) * 64 + 5])
+                if self.owner[y][x] == "lose":
+                    self.screen.blit(self.othermarker, [(x * 64 + 5), (y) * 64 + 5])
 
     def drawHUD(self):
         self.screen.blit(self.score_panel, [0, 325])
@@ -109,12 +117,6 @@ class CramGame(ConnectionListener):
         self.screen.blit(scoretextother, (240, 370))
         self.screen.blit(scoreother, (270, 380))
 
-    # def getMove(threadName, delay)
-    # count = 0
-    # while count < 5
-    # time.sleep(delay)
-    # count += 1
-    # print "%s: %s" % (threadName, time.ctime(time.time()))
 
     def update(self):
 
@@ -197,13 +199,17 @@ class CramGame(ConnectionListener):
         self.isGameover = True
 
     def Network_win(self, data):
-        self.board[data["y1"]][data["x1"]] = "win"
-        #self.board[data["y2"]][data["x2"]] = "win"
+        self.owner[data["y1"]][data["x1"]] = "win"
+        self.owner[data["y2"]][data["x2"]] = "win"
+        self.board[data["y1"]][data["x1"]] = True
+        self.board[data["y2"]][data["x2"]] = True
         self.me += 1
 
     def Network_lose(self, data):
-        self.board[data["y1"]][data["x1"]] = "lose"
-        #self.board[data["y2"]][data["x2"]] = "lose"
+        self.owner[data["y1"]][data["x1"]] = "lose"
+        self.owner[data["y2"]][data["x2"]] = "lose"
+        self.board[data["y1"]][data["x1"]] = True
+        self.board[data["y2"]][data["x2"]] = True
         self.otherplayer += 1
 
     def initGraphics(self):
