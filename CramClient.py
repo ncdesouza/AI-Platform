@@ -69,36 +69,64 @@ class CramClient(ConnectionListener):
         self.screen.blit(self.greenplayer, (200, 100))
 
     def selectPlayer(self):
-        isBig = len(self.teams) > 5
-        pBoard = [[False for t in range(5 if isBig else len(self.teams))] for y in
-                  range((int(math.ceil(len(self.teams) / 5.0))) if len(self.teams) > 5 else 1)]
+        i = 0
+        pBoard = [[False for x in range(6)] for y in range(7)]
+        for x in range(6):
+            for y in range(7):
+                if len(self.teams) <= i:
+                    pBoard[y][x] = True
+                i += 1
+
         self.screen.fill(0)
         self.drawPlayerboard()
         pygame.display.flip()
 
         pygame.event.get()
         mouse = pygame.mouse.get_pos()
-        xpos = int(mouse[0])
-        ypos = int(mouse[1])
+        xpos = int(math.ceil(mouse[0]) / 64.0)
+        ypos = int(math.ceil(mouse[1]) / 64.0)
+
+        isoutofbounds = False
+        temp = pBoard
+        try:
+            if not temp[ypos][xpos]:
+                self.screen.blit(self.playerselector, [xpos * 64 + 5, (ypos * 64) + 10])
+        except:
+            isoutofbounds = True
+            pass
+        if not isoutofbounds:
+            alreadyplaced = pBoard[ypos][xpos]
+        else:
+            alreadyplaced = False
+
+        if pygame.mouse.get_pressed()[0] and not alreadyplaced and not isoutofbounds:
+            opponent = self.teams[ypos + (xpos * 7)]
+            print opponent
+            self.Send({"action": "selectplayer", "player": opponent})
+
+
+        pygame.display.flip()
+        sleep(0.1)
 
 
     def drawPlayerboard(self):
         self.screen.blit(self.gameroom, (0, 0))
-        xtotal = 5
-        ytotal = int(math.ceil(len(self.teams) / 5.0))
         i = 0
-        for x in range(xtotal):
-            for y in range(ytotal):
-                if len(self.teams) > i:
-                    # if self.teams[i] is not None:
-                        self.screen.blit(self.greenplayer, [x * 64, y * 65 + 5])
-                        i += 1
+        for x in range(6):
+            for y in range(7):
+                self.screen.blit(self.activeplayer if i < len(self.teams)
+                                 else self.inactiveplayer, [x * 64 + 5, y * 65 + 5 + 5])
+                i += 1
 
 
     def initGraphics(self):
         self.gameroom = pygame.image.load("./images/GameRoom.png")
         self.greenplayer = pygame.image.load("./images/greenplayer.png")
         self.blueplayer = pygame.image.load("./images/blueplayer.png")
+        self.inactiveplayer = pygame.image.load("./images/inactiveplayer.png")
+        self.activeplayer = pygame.image.load("./images/activeplayer.png")
+        self.playerselector = pygame.image.load("./images/playerselector.png")
+        self.botimg = pygame.image.load("./images/bot.png")
 
     def Loop(self):
         connection.Pump()
