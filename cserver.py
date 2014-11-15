@@ -5,14 +5,14 @@ import random
 
 
 class ClientChannel(PodSixNet.Channel.Channel):
-
     def Network_playerlist(self, data):
-        playerID = data["pID"]
+        self.pID = data["pID"]
+        self._server.playerList(self.pID, data)
 
 
     # Prints moves to terminal
     # def Network(self, data):
-    #     print data
+    # print data
 
     # Break up data
     def Network_place(self, data):
@@ -22,12 +22,11 @@ class ClientChannel(PodSixNet.Channel.Channel):
         y2 = data["y2"]
         num = data["num"]
         self.gameid = data["gameid"]
-        #self.playerID = data["playerID"]
         self._server.placeBlock(x1, y1, x2, y2, data, self.gameid, num)
         print data
 
-    def Close(self):
-        self._server.close(self.gameid)
+    # def Close(self):
+    #     self._server.close(self.gameid)
 
 
 class CramServer(PodSixNet.Server.Server):
@@ -37,31 +36,29 @@ class CramServer(PodSixNet.Server.Server):
         PodSixNet.Server.Server.__init__(self, *args, **kwargs)
         print "Crunch-Platform up and running"
         self.players = []
-        self.games = []
         self.queue = None
         self.currentIndex = 0
 
     def Connected(self, channel, addr):
         print 'new connection:', channel
-        if self.queue == None:
+        if self.queue is None:
             self.currentIndex += 1
-            channel.playerID = self.currentIndex
+            channel.pID = self.currentIndex
             self.queue = Room(channel, self.currentIndex)
+            self.queue.players[0].Send({"action": "enterroom", "pID": self.currentIndex})
             # channel.gameid = self.currentIndex
             # self.queue = Game(channel, self.currentIndex)
-
         else:
             self.currentIndex += 1
-            channel.numPlayers = self.currentIndex
-            #channel.gameid = self.currentIndex
+            channel.pID = self.currentIndex
             self.queue.players.append(channel)
+            self.queue.numPlayers = self.currentIndex
             self.players.append(self.queue)
 
 
 
-
-
-            #self.queue.player1 = channel
+            # channel.gameid = self.currentIndex
+            # self.queue.player1 = channel
             # self.queue.player0.Send({"action": "startgame", "player": 0, "gameid": self.queue.gameid})
             # self.queue.player1.Send({"action": "startgame", "player": 1, "gameid": self.queue.gameid})
             # self.games.append(self.queue)
@@ -70,7 +67,9 @@ class CramServer(PodSixNet.Server.Server):
 
     # << Dynamically create the player list and return to caller >>
     def playerList(self, pID, data):
-        room = [p for p in self.players if p.]
+        player = [p for p in self.players if p.pID == pID]
+        if len(player) == 1:
+            player[0].playerList(self, pID, data)
 
 
     def placeBlock(self, x1, y1, x2, y2, data, gameid, num):
@@ -79,7 +78,7 @@ class CramServer(PodSixNet.Server.Server):
             game[0].placeBlock(x1, y1, x2, y2, data, num)
 
     # def close(self, gameid):
-    #     try:
+    # try:
     #         game = [a for a in self.games if a.gameid == gameid][0]
     #         game.player0.Send({"action": "close"})
     #         game.player1.Send({"action": "close"})
@@ -147,11 +146,15 @@ class Room:
         self.players = []
         self.numPlayers = currentIndex
         self.players.append(player)
-        #self.printPlayers()
+        # self.printPlayers()
 
     def printPlayers(self):
         for pl in range(0, self.numPlayers):
             print self.players[pl]
+
+    def playerList(self, pID, data):
+        self.players[pID].Send({"action": "playerlist", "pID": pID, "numPlayers": self.numPlayers})
+
 
 class Game:
     def __init__(self, player0, currentIndex):
@@ -175,7 +178,7 @@ class Game:
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-                    #send data and turn data to each player
+                    # send data and turn data to each player
                     self.player0.Send(data)
                     self.player1.Send(data)
                 if x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
@@ -185,7 +188,7 @@ class Game:
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-                    #send data and turn data to each player
+                    # send data and turn data to each player
                     self.player0.Send(data)
                     self.player1.Send(data)
 
@@ -193,6 +196,6 @@ class Game:
 print "Starting Crunch-Platform..."
 cramServer = CramServer(localaddr=("localhost", 8000))
 while True:
-    #cramServer.tick()
+    # cramServer.tick()
     cramServer.Pump()
     sleep(0.01)

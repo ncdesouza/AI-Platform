@@ -6,14 +6,21 @@ import random
 
 
 class CramGame(ConnectionListener):
-    def Network_startgame(self, data):
-        self.gamestart = True
-        self.num = data["player"]
-        self.gameid = data["gameid"]
+
 
     def Network_enterroom(self, data):
         self.running = True
+        self.pID = data["pID"]
+
+    def Network_playerlist(self, data):
+        self.running = True
+        self.pID = data["pID"]
+        self.numPlayers = data["numPlayers"]
+
+    def Network_startgame(self, data):
+        self.running = True
         self.num = data["player"]
+        self.gameid = data["gameid"]
 
     def Network_place(self, data):
         x1 = data["x1"]
@@ -32,6 +39,7 @@ class CramGame(ConnectionListener):
         self.turn = data["torf"]
 
     def __init__(self):
+        self.pBoard = None
         self.justplaced = 10
         self.board = [[False for x in range(5)] for y in range(5)]
         self.initGraphics()
@@ -57,6 +65,9 @@ class CramGame(ConnectionListener):
         self.otherplayer = 0
         self.didiwin = False
         self.isGameover = False
+        self.pID = None
+        self.clock.tick(60)
+        self.numPlayers = None
 
         self.Connect(("localhost", 8000))
 
@@ -64,11 +75,13 @@ class CramGame(ConnectionListener):
         self.drawRoom()
         pygame.display.flip()
 
+        self.running = False
         while not self.running:
             self.selectRoom()
-            # self.Pump()
-            # connection.Pump()
-            # sleep(0.01)
+
+        self.running = False
+        while not self.running:
+            self.enterRoom()
 
         self.gamestart = False
         while not self.gamestart:
@@ -86,32 +99,50 @@ class CramGame(ConnectionListener):
             self.othermarker = self.greenplayer
 
     def selectRoom(self):
-        self.clock.tick(60)
         connection.Pump()
         self.Pump()
 
         pygame.event.get()
-
         mouse = pygame.mouse.get_pos()
 
         xpos = int(mouse[0])
         ypos = int(mouse[1])
 
-        print xpos, ypos
+        if pygame.mouse.get_pressed()[0]:
+            if 200 < xpos < 250:
+                print xpos, ypos
+                self.Send({"action": "playerlist", "pID": self.pID})
 
-        if pygame.mouse.get_pressed()[0] and 100 < xpos > 150:
-            self.screen.fill(0)
-            self.drawBoard()
-            pygame.display.flip()
-            self.running = True
-            self.gamestart = True
+            if 100 < xpos < 150:
+                print xpos, ypos
+                self.screen.fill(0)
+                self.drawBoard()
+                pygame.display.flip()
 
-        if pygame.mouse.get_pressed()[0] and 200 < xpos > 250:
-            self.screen.fill(0)
-            self.drawPlayerRoom()
-            pygame.display.flip()
-            sleep(2)
 
+    def enterRoom(self):
+        connection.Pump()
+        self.Pump()
+        self.screen.fill(0)
+        opponent = None
+        i = 1
+        for x in range(5):
+            for y in range(int(math.ceil(self.numPlayers/5.0))):
+                self.pBoard[x][y] = i
+                i += 1
+        self.drawPlayerRoom()
+        pygame.display.flip()
+
+        pygame.event.get()
+        mouse = pygame.mouse.get_pos()
+
+        xpos = int(math.ceil(mouse[0]/64.0))
+        ypos = int(math.ceil(mouse[1]/64.0))
+
+        if pygame.mouse.get_pressed()[0]:
+                opponent = self.pBoard[xpos][ypos]
+
+        self.Send({"action": "selectplayer", "pID": self.pID, "player": opponent})
 
 
     def drawRoom(self):
@@ -121,7 +152,11 @@ class CramGame(ConnectionListener):
 
     def drawPlayerRoom(self):
         self.screen.blit(self.gameroom, (0, 0))
-        self.Send({"action": "getplayerlist" })
+        xtotal = 5
+        ytotal = int(math.floor(self.numPlayers/5))
+        for x in range(xtotal):
+            for y in range(ytotal):
+                self.screen.blit(self.greenplayer, [x * 64, y * 65 + 5])
 
 
 
