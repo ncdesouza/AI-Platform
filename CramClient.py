@@ -10,14 +10,13 @@ class CramClient(ConnectionListener):
     def __init__(self, host, prt):
         self.Connect((host, prt))
         print "Welcome to the Crunch-Platform client portal"
-        print "Connected to Crunch-Platform"
         print "Ctrl-C to exit"
         """
         " Enter your team name when prompted >>
         """
         self.teamname = stdin.readline().rstrip("\n")
         connection.Send({"action": "teamname", "teamname": self.teamname})
-
+        print "Connecting to Crunch-Platform..."
         """
         " Initializing the console
         """
@@ -36,6 +35,8 @@ class CramClient(ConnectionListener):
         self.selectplayer = False
         while not self.selectplayer:
             self.selectPlayer()
+
+        self.startgame = False
 
 
     def selectRoom(self):
@@ -68,9 +69,18 @@ class CramClient(ConnectionListener):
         self.screen.blit(self.greenplayer, (200, 100))
 
     def selectPlayer(self):
+        isBig = len(self.teams) > 5
+        pBoard = [[False for t in range(5 if isBig else len(self.teams))] for y in
+                  range((int(math.ceil(len(self.teams) / 5.0))) if len(self.teams) > 5 else 1)]
         self.screen.fill(0)
         self.drawPlayerboard()
         pygame.display.flip()
+
+        pygame.event.get()
+        mouse = pygame.mouse.get_pos()
+        xpos = int(mouse[0])
+        ypos = int(mouse[1])
+
 
     def drawPlayerboard(self):
         self.screen.blit(self.gameroom, (0, 0))
@@ -80,9 +90,10 @@ class CramClient(ConnectionListener):
         for x in range(xtotal):
             for y in range(ytotal):
                 if len(self.teams) > i:
-                    if self.teams[i] is not None:
+                    # if self.teams[i] is not None:
                         self.screen.blit(self.greenplayer, [x * 64, y * 65 + 5])
                         i += 1
+
 
     def initGraphics(self):
         self.gameroom = pygame.image.load("./images/GameRoom.png")
