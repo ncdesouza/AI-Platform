@@ -255,26 +255,12 @@ class CramClient(ConnectionListener):
 
             y1, x1, y2, x2 = self.makeMove()
 
-            alreadyplaced = self.board[y1][x1]
-            alreadyplaced2 = self.board[y2][x2]
-
-            if 0 >= x1 >= 4 and 0 >= y1 >= 4:
-                isoutofbounds = True
-                print "Invalid Move"
-            else:
-                isoutofbounds = False
-
-            if not alreadyplaced:
-                if not alreadyplaced2:
-                    if not isoutofbounds:
-                        if 0 <= x1 <= 4 and 0 <= y1 <= 4 and 0 <= x2 <= 4 and 0 <= y2 <= 4:
-                            if x1 - x2 == 1 or x1 - x2 == 0 and 1 == y1 - y2 or y1 - y2 == 0:
-                                if self.justplaced <= 0:
-                                    self.justplaced = 10
-                                    connection.Send(
-                                        {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                         "playerID": self.playerID, "turn": self.turn,
-                                         "gameID": self.gameID})
+            if self.justplaced <= 0:
+                self.justplaced = 10
+                connection.Send(
+                    {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                     "playerID": self.playerID, "turn": self.turn,
+                     "gameID": self.gameID})
         pygame.display.flip()
 
         if self.isgameover:
@@ -376,7 +362,8 @@ class CramClient(ConnectionListener):
         self.owner[y2][x2] = playerID
         sleep(1)
 
-    #def Network_invalidmove(self, data):
+    def Network_invalidmove(self, data):
+        print "invalid move"
 
 
     def Network_gameover(self, data):

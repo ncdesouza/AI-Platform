@@ -181,7 +181,15 @@ class Game:
         alreadyplaced = self.board[y1][x1]
         alreadyplaced2 = self.board[y2][x2]
         if playerID == self.turn:
+            alreadyplaced = self.board[y1][x1]
+            alreadyplaced2 = self.board[y2][x2]
+
             if 0 <= x1 <= 4 and 0 <= y1 <= 4 and 0 <= x2 <= 4 and 0 <= y2 <= 4:
+                isoutofbounds = False
+            else:
+                isoutofbounds = True
+
+            if not alreadyplaced and not alreadyplaced2 and not isoutofbounds:
                 if x1 - x2 == 1 or x1 - x2 == 0 and 1 == y1 - y2 or y1 - y2 == 0:
                     self.turn = 0 if self.turn == 1 else 1
                     self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
@@ -191,7 +199,6 @@ class Game:
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-
                 elif x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
                     self.turn = 0 if self.turn else 1
                     self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
@@ -201,6 +208,16 @@ class Game:
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
+                else:
+                    self.invalidMove(playerID, data)
+            else:
+                self.invalidMove(playerID, data)
+
+    def invalidMove(self, playerID, data):
+        if self.turn == 1:
+            self.p1.Send({"action": "invalidmove"})
+        else:
+            self.p0.Send({"action": "invalidmove"})
 
 
 print "Starting Crunch-Platform..."
