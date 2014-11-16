@@ -1,5 +1,4 @@
-import sys
-from time import sleep, localtime
+from time import sleep
 from weakref import WeakKeyDictionary
 
 from PodSixNet.Server import Server
@@ -52,7 +51,9 @@ class ClientChannel(Channel):
         gameID = data['gameID']
         self._server.placeBlock(x1, y1, x2, y2, gameID, num, data)
 
+
 class CramServer(Server):
+
     channelClass = ClientChannel
 
     def __init__(self, *args, **kwargs):
@@ -79,14 +80,25 @@ class CramServer(Server):
         self.players[player] = True
 
     def playerList(self, team, data):
+
         self.SendBack(team, {"action": "retpList",
                              "players":
-                                 [p.teamname for p in self.players]})
+                                 [p.teamname for p in self.players if p.teamname != team]})
 
     def SendBack(self, teamname, data):
         player = [p for p in self.players if p.teamname == teamname]
         if len(player) == 1:
             player[0].Send(data)
+
+    def RmPlayer(self, player):
+        print "Removing Player" + str(player.addr)
+        rm = self.players.get(player)
+        print "Removing Player" + str(rm)
+        del self.players[player]
+
+    ##################################
+    ###       Cram game flow       ###
+    ##################################
 
     def newGame(self, player0, player1):
         self.gameID += 1
@@ -104,15 +116,6 @@ class CramServer(Server):
         self.games.append(self.queue)
         self.queue = None
 
-    def RmPlayer(self, player):
-        print "Removing Player" + str(player.addr)
-        rm = self.players.get(player)
-        print "Removing Player" + str(rm)
-        del self.players[player]
-
-    ##################################
-    ###       Cram game flow       ###
-    ##################################
     def placeBlock(self, x1, y1, x2, y2 , gameID, num, data):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
@@ -155,6 +158,7 @@ class CramServer(Server):
                 game.player0.Send({"action": "gameover", "torf": True})
         self.Pump()
 
+
 class Game:
     def __init__(self, player0, player1, gameID):
         # Track which players turn
@@ -164,9 +168,9 @@ class Game:
         self.player0 = player0
         self.player1 = player1
         # Track which game
-        self.gameid = gameID
+        self.gameID = gameID
 
-    def placeBlock(self, x1, y1, x2, y2, data, num):
+    def placeBlock(self, x1, y1, x2, y2, num, data):
         # make sure it's their turn
         if num == self.turn:
             if 0 <= x1 <= 4 and 0 <= y1 <= 4 and 0 <= x2 <= 4 and 0 <= y2 <= 4:
@@ -180,7 +184,7 @@ class Game:
                     # send data and turn data to each player
                     self.player0.Send(data)
                     self.player1.Send(data)
-                if x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
+                elif x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
                     self.turn = 0 if self.turn else 1
                     self.player1.Send({"action": "yourturn", "torf": True if self.turn == 1 else False})
                     self.player0.Send({"action": "yourturn", "torf": True if self.turn == 0 else False})
@@ -195,6 +199,6 @@ class Game:
 print "Starting Crunch-Platform..."
 cramServer = CramServer(localaddr=("localhost", 63400))
 while True:
-    # cramServer.tick()
-    cramServer.Pump()
+    cramServer.tick()
+    # cramServer.Pump()
     sleep(0.01)

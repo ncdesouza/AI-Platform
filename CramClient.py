@@ -1,10 +1,10 @@
 import random
-import sys
 from time import sleep
 from sys import stdin, exit
 import pygame
-from PodSixNet.Connection import connection, ConnectionListener
 import math
+
+from PodSixNet.Connection import connection, ConnectionListener
 
 
 class CramClient(ConnectionListener):
@@ -14,7 +14,9 @@ class CramClient(ConnectionListener):
         print "Ctrl-C to exit"
 
         """
-        " Enter your team name when prompted >>
+        " << Enter your  team name when prompted >>
+        "  ** Please limit name to 4 characters **
+        "   *        to keep gui clean          *
         """
         self.teamname = stdin.readline().rstrip("\n")
         connection.Send({"action": "teamname", "teamname": self.teamname})
@@ -74,6 +76,8 @@ class CramClient(ConnectionListener):
             self.marker = self.blueplayer
             self.othermarker = self.greenplayer
 
+        pygame.display.flip()
+
 
     #################################
     ###     Game options menu     ###
@@ -85,7 +89,10 @@ class CramClient(ConnectionListener):
         connection.Pump()
         self.Pump()
 
-        pygame.event.get()
+        for event in pygame.event.get():
+            # quit id the button is pressed
+            if event.type == pygame.QUIT:
+                exit()
         mouse = pygame.mouse.get_pos()
 
         xpos = int(mouse[0])
@@ -119,7 +126,10 @@ class CramClient(ConnectionListener):
         self.drawPlayerboard()
         pygame.display.flip()
 
-        pygame.event.get()
+        for event in pygame.event.get():
+            # quit id the button is pressed
+            if event.type == pygame.QUIT:
+                exit()
         mouse = pygame.mouse.get_pos()
         xpos = int(math.ceil(mouse[0]) / 64.0)
         ypos = int(math.ceil(mouse[1]) / 64.0)
@@ -147,11 +157,17 @@ class CramClient(ConnectionListener):
 
     def drawPlayerboard(self):
         self.screen.blit(self.gameroom, (0, 0))
+        myfont20 = pygame.font.SysFont(None, 20)
         i = 0
         for x in range(6):
             for y in range(7):
-                self.screen.blit(self.activeplayer if i < len(self.teams)
-                                 else self.inactiveplayer, [x * 64 + 5, y * 65 + 5 + 5])
+                if i < len(self.teams):
+                    self.screen.blit(self.activeplayer, [x * 64 + 5, y * 65 + 5 + 5])
+                    playername = myfont20.render(self.teams[i], 1, (255, 255, 255))
+                    self.screen.blit(playername, [x * 64 + 5  + 15, y * 65 + 5 + 45])
+                else:
+                    self.screen.blit(self.inactiveplayer, [x * 64 + 5, y * 65 + 5 + 5])
+
                 i += 1
 
 
@@ -206,6 +222,12 @@ class CramClient(ConnectionListener):
         self.screen.fill(0)
         self.drawBoard()
         self.drawHUD()
+
+        for event in pygame.event.get():
+            # quit id the button is pressed
+            if event.type == pygame.QUIT:
+                exit()
+
         pygame.display.flip()
 
         if self.turn:
@@ -232,7 +254,7 @@ class CramClient(ConnectionListener):
                                     self.board[y2][x2] = True
                                     self.Send(
                                         {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                         "num": self.playerID, "gameid": self.gameid})
+                                         "num": self.playerID, "gameID": self.gameID})
 
 
 
