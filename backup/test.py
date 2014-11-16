@@ -28,7 +28,6 @@ for e in range(0, 5):
         print e, y
         if not gameOver:
             break
-
 for x in range(5):
     print board[x]
 
