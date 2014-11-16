@@ -11,11 +11,15 @@ class ClientChannel(Channel):
         self.teamname = "Annyonmous"
         Channel.__init__(self, *args, **kwargs)
 
+    ##################################
+    ###   Network event callbacks  ###
+    ##################################
+
     def Close(self):
         self._server.RmPlayer(self)
 
     ##################################
-    ### Network specific callbacks ###
+    ###    Start menu callbacks    ###
     ##################################
 
     def Network_teamname(self, data):
@@ -26,11 +30,27 @@ class ClientChannel(Channel):
         team = data['teamname']
         self._server.playerList(team, data)
 
-    def Network_selectplayer(self, data):
+    def Network_selectPlayer(self, data):
         player0 = data['player0']
         player1 = data['player1']
-        self._server.newGame(self, player0, player1)
+        self._server.newGame(player0, player1)
 
+    def Network_botplay(self, data):
+        team = data['teamname']
+
+
+    ##################################
+    ###    Cram game callbacks     ###
+    ##################################
+
+    def Network_place(self, data):
+        x1 = data['x1']
+        y1 = data['y1']
+        x2 = data['x2']
+        y2 = data['y2']
+        num = data['num']
+        gameID = data['gameID']
+        self._server.placeBlock(x1, y1, x2, y2, gameID, num, data)
 
 class CramServer(Server):
     channelClass = ClientChannel
@@ -47,6 +67,9 @@ class CramServer(Server):
 
         print 'Server Launched'
 
+    ##################################
+    ###     Game menu options      ###
+    ##################################
     def Connected(self, channel, addr, ):
         self.AddPlayer(channel)
 
@@ -55,7 +78,6 @@ class CramServer(Server):
         self.numTeams += 1
         self.players[player] = True
 
-    #
     def playerList(self, team, data):
         self.SendBack(team, {"action": "retpList",
                              "players":
@@ -88,11 +110,50 @@ class CramServer(Server):
         print "Removing Player" + str(rm)
         del self.players[player]
 
-    def Launch(self):
-        while True:
-            self.Pump()
-            sleep(0.0001)
+    ##################################
+    ###       Cram game flow       ###
+    ##################################
+    def placeBlock(self, x1, y1, x2, y2 , gameID, num, data):
+        game = [a for a in self.games if a.gameID == gameID]
+        if len(game) == 1:
+            game[0].placeBlock(x1, y1, x2, y2, num, data)
 
+
+
+    def tick(self):
+        index = 0
+        gameOver = True
+        for game in self.games:
+            for e in range(0, 5):
+                for y in range(0, 5):
+                    if y is 4:
+                        if e is not 4 and not game.board[e][y] and not game.board[e + 1][y]:
+                            gameOver = False
+                            break
+
+                    elif e is 4:
+
+                        if y is not 4 and not game.board[e][y] and not game.board[e][y + 1]:
+                            gameOver = False
+                            break
+
+                    elif not game.board[e][y] and not game.board[e + 1][y]:
+                        gameOver = False
+                        break
+
+                    elif not game.board[e][y] and not game.board[e][y + 1]:
+                        gameOver = False
+                        break
+
+                if not gameOver:
+                    break
+
+        if gameOver:
+            index = 0
+            for game in self.games:
+                game.player1.Send({"action": "gameover", "torf": True})
+                game.player0.Send({"action": "gameover", "torf": True})
+        self.Pump()
 
 class Game:
     def __init__(self, player0, player1, gameID):

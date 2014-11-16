@@ -1,3 +1,4 @@
+import random
 import sys
 from time import sleep
 from sys import stdin, exit
@@ -31,12 +32,48 @@ class CramClient(ConnectionListener):
 
         self.teams = None
         self.selected = False
+        self.startgame = False
+        """
+        " Select game type:
+        "    Player Vs. Bot - Server bot
+        "    Player Vs. Player - Play against opponent
+        " << use your mouse >>
+        """
         while not self.selected:
             self.selectRoom()
 
-        self.startgame = False
+        """
+        " Select player:
+        "   If Player Vs. Player option was selected
+        "   select your opponent from online players
+        " << use your mouse >>
+        """
         while not self.startgame:
             self.selectPlayer()
+
+        """
+        " Initialize game settings
+        """
+        self.justplaced = 10
+        self.board = [[False for x in range(5)] for y in range(5)]
+        self.me = 0
+        self.opponent = 0
+        self.didiwin = False
+        self.gameID = None
+        self.turn = True
+        self.clock = pygame.time.Clock()
+        self.clock.tick(60)
+        self.isgameover = False
+
+        if self.playerID == 0:
+            self.turn = True
+            self.marker = self.greenplayer
+            self.othermarker = self.blueplayer
+        else:
+            self.turn = False
+            self.marker = self.blueplayer
+            self.othermarker = self.greenplayer
+
 
     #################################
     ###     Game options menu     ###
@@ -56,14 +93,11 @@ class CramClient(ConnectionListener):
 
         if pygame.mouse.get_pressed()[0]:
             if 200 < xpos < 250:
-                print xpos, ypos
-                self.Send({"action": "getPlayers", "teamname": self.teamname})
-
+                self.Send({"action": "getPlayers",
+                           "teamname": self.teamname})
             if 100 < xpos < 150:
-                print xpos, ypos
-                self.screen.fill(0)
-                self.drawBoard()
-                pygame.display.flip()
+                self.Send({"action": "botplay",
+                           "teamname": self.teamname})
 
     def drawSelectScreen(self):
         self.screen.blit(self.gameroom, (0, 0))
@@ -71,6 +105,8 @@ class CramClient(ConnectionListener):
         self.screen.blit(self.greenplayer, (200, 100))
 
     def selectPlayer(self):
+        connection.Pump()
+        self.Pump()
         i = 0
         pBoard = [[False for x in range(6)] for y in range(7)]
         for x in range(6):
@@ -105,10 +141,7 @@ class CramClient(ConnectionListener):
         if pygame.mouse.get_pressed()[0] and not alreadyplaced \
                 and not isoutofbounds:
             opponent = self.teams[ypos + (xpos * 7)]
-            print opponent
-            self.Send({"action": "selectplayer",
-                       "player0": self.teamname,
-                       "player1": opponent})
+            self.Send({'action': "selectPlayer", 'player0': self.teamname, 'player1': opponent})
         pygame.display.flip()
         sleep(0.1)
 
@@ -153,7 +186,7 @@ class CramClient(ConnectionListener):
         myfont20 = pygame.font.SysFont(None, 20)
 
         scoreme = myfont64.render(str(self.me), 1, (255, 255, 255))
-        scoreother = myfont64.render(str(self.otherplayer), 1, (255, 255, 255))
+        scoreother = myfont64.render(str(self.opponent), 1, (255, 255, 255))
         scoretextme = myfont20.render("You", 1, (255, 255, 255))
         scoretextother = myfont20.render("Other Player", 1, (255, 255, 255))
 
@@ -163,11 +196,83 @@ class CramClient(ConnectionListener):
         self.screen.blit(scoreother, (270, 380))
 
     def update(self):
+        """
+        " Main game loop
+        """
+        self.justplaced -= 1
         connection.Pump()
         self.Pump()
 
-    def finished(self):
-        self.screen.blit(self.gameover if not self.didiwin else self.winningscreen, (0, 0))
+        self.screen.fill(0)
+        self.drawBoard()
+        self.drawHUD()
+        pygame.display.flip()
+
+        if self.turn:
+
+            y1, x1, y2, x2 = self.makeMove()
+
+            alreadyplaced = self.board[y1][x1]
+            alreadyplaced2 = self.board[y2][x2]
+
+            if x1 < 0 or x1 > 4 and y1 < 0 or y1 > 4:
+                isoutofbounds = True
+                print "Invalid Move"
+            else:
+                isoutofbounds = False
+
+            if not alreadyplaced:
+                if not alreadyplaced2:
+                    if not isoutofbounds:
+                        if 0 <= x1 <= 4 and 0 <= y1 <= 4 and 0 <= x2 <= 4 and 0 <= y2 <= 4:
+                            if x1 - x2 == 1 or x1 - x2 == 0 and 1 == y1 - y2 or y1 - y2 == 0:
+                                if self.justplaced <= 0:
+                                    self.justplaced = 10
+                                    self.board[y1][x1] = True
+                                    self.board[y2][x2] = True
+                                    self.Send(
+                                        {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                                         "num": self.playerID, "gameid": self.gameid})
+
+
+
+            print"x1 y1 x2 y2"
+            print x1, " ", y1, " ", x2, " ", y2
+
+        pygame.display.flip()
+
+        if self.isgameover:
+            return 1
+
+    def makeMove(self):
+        x1 = random.randint(0, 4)
+        y1 = random.randint(0, 4)
+
+        # x or y attached block
+        xory = random.randint(0, 1)
+        # negative or positive attached block
+        norp = random.randint(0, 1)
+        # ensures the values are within the array
+        if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
+            c = -1
+        elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
+            c = 1
+        if xory == 0:
+            x2 = x1 + c
+            if x2 < 0 or x2 > 4:
+                x2 = x1 + (-c)
+            y2 = y1
+        else:
+            y2 = y1 + c
+            if y2 < 0 or y2 > 4:
+                y2 = y1 + (-c)
+            x2 = x1
+        return (y1, x1, y2, x2)
+
+    def gameOver(self):
+        self.screen.blit(
+            self.gameover if not self.didiwin else self.winningscreen,
+            (0, 0))
         while 1:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -201,10 +306,34 @@ class CramClient(ConnectionListener):
     ###  Cram game specific callbacks  ###
     ######################################
 
-    def Network_startgame(self, data):
+    def Network_botplay(self, data):
+        """
+        " Starts a game with the server bot
+        """
+        self.selected = True
         self.startgame = True
         self.playerID = data['playerID']
         self.gameID = data['gameID']
+
+    def Network_startgame(self, data):
+        """
+        " Starts a game with another player
+        """
+        self.selected = True
+        self.startgame = True
+        self.playerID = data['playerID']
+        self.gameID = data['gameID']
+
+    def Network_place(self, data):
+        x1 = data['x1']
+        y1 = data['y1']
+        x2 = data['x2']
+        y2 = data['y2']
+        self.board[y1][x1] = True
+        self.board[y2][x2] = True
+
+    def Network_yourturn(self, data):
+        self.turn = data['torf']
 
 
     #####################################
@@ -243,7 +372,7 @@ cramClient = CramClient("localhost", 63400)
 while 1:
     if cramClient.update() == 1:
         break
-cramClient.finished()
+cramClient.gameOver()
 
 
 
