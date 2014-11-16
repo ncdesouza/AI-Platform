@@ -28,15 +28,17 @@ class CramClient(ConnectionListener):
         self.justplaced = 10
         self.board = [[False for x in range(5)] for y in range(5)]
         self.owner = [[None for x in range(5)] for y in range(5)]
+        self.turn = False
+        self.playerID = None
+        self.gameID = None
+
         self.me = 0
         self.opponent = 0
         self.didiwin = False
-        self.gameID = None
-        self.turn = False
+        self.isgameover = False
+
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
-        self.isgameover = False
-        self.playerID = None
 
         """
         " Initializing the console
@@ -205,8 +207,10 @@ class CramClient(ConnectionListener):
                 self.screen.blit(self.separators, [x * 64, y * 64])
         for x in range(5):
             for y in range(5):
-                if self.board[y][x]:
-                    self.screen.blit(self.greenplayer, [(x * 64 + 5), (y) * 64 + 5])
+                if self.owner[y][x] == 0:
+                    self.screen.blit(self.selector, [(x * 64 + 5), (y) * 64 + 5])
+                if self.owner[y][x] == 1:
+                    self.screen.blit(self.blueplayer , [(x * 64 + 5), (y) * 64 + 5])
 
     def drawHUD(self):
         self.screen.blit(self.score_panel, [0, 325])
@@ -233,12 +237,14 @@ class CramClient(ConnectionListener):
         """
         " Main game loop
         """
+        self.justplaced -= 1
         connection.Pump()
         self.Pump()
 
         self.screen.fill(0)
         self.drawBoard()
         self.drawHUD()
+        pygame.display.flip()
 
         for event in pygame.event.get():
             # quit id the button is pressed
@@ -252,7 +258,7 @@ class CramClient(ConnectionListener):
             alreadyplaced = self.board[y1][x1]
             alreadyplaced2 = self.board[y2][x2]
 
-            if x1 < 0 or x1 > 4 and y1 < 0 or y1 > 4:
+            if 0 >= x1 >= 4 and 0 >= y1 >= 4:
                 isoutofbounds = True
                 print "Invalid Move"
             else:
@@ -265,11 +271,10 @@ class CramClient(ConnectionListener):
                             if x1 - x2 == 1 or x1 - x2 == 0 and 1 == y1 - y2 or y1 - y2 == 0:
                                 if self.justplaced <= 0:
                                     self.justplaced = 10
-                                    self.board[y1][x1] = True
-                                    self.board[y2][x2] = True
                                     connection.Send(
                                         {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                         "num": self.playerID, "gameid": self.gameid})
+                                         "playerID": self.playerID, "turn": self.turn,
+                                         "gameID": self.gameID})
         pygame.display.flip()
 
         if self.isgameover:
@@ -363,9 +368,19 @@ class CramClient(ConnectionListener):
         y1 = data['y1']
         x2 = data['x2']
         y2 = data['y2']
-        num = data['num']
-        self.owner[y1][x1] = num
-        self.owner[y2][x2] = num
+        playerID = data['playerID']
+        self.turn = data['turn']
+        self.board[y1][x1] = True
+        self.board[y2][x2] = True
+        self.owner[y1][x1] = playerID
+        self.owner[y2][x2] = playerID
+        sleep(1)
+
+    #def Network_invalidmove(self, data):
+
+
+    def Network_gameover(self, data):
+        self.isgameover = True
 
     def Network_yourturn(self, data):
         self.turn = data['torf']

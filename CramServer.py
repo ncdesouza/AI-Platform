@@ -48,9 +48,10 @@ class ClientChannel(Channel):
         y1 = data['y1']
         x2 = data['x2']
         y2 = data['y2']
-        num = data['num']
+        playerID = data['playerID']
+        turn = data['turn']
         gameID = data['gameID']
-        self._server.placeBlock(x1, y1, x2, y2, gameID, num, data)
+        self._server.placeBlock(x1, y1, x2, y2, gameID, playerID, turn, data)
 
 
 class CramServer(Server):
@@ -122,34 +123,33 @@ class CramServer(Server):
                             "gameID": self.curindex})
         self.queue = None
 
-    def placeBlock(self, x1, y1, x2, y2 , gameID, num, data):
+    def placeBlock(self, x1, y1, x2, y2 , gameID, playerID, turn, data):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
-            game[0].placeBlock(x1, y1, x2, y2, num, data)
-            print data
+            game[0].placeBlock(x1, y1, x2, y2, gameID, playerID, turn, data)
 
     def tick(self):
         index = 0
         gameOver = True
         for game in self.games:
-            for e in range(0, 5):
+            for x in range(0, 5):
                 for y in range(0, 5):
                     if y is 4:
-                        if e is not 4 and not game.board[e][y] and not game.board[e + 1][y]:
+                        if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:
                             gameOver = False
                             break
 
-                    elif e is 4:
+                    elif x is 4:
 
-                        if y is not 4 and not game.board[e][y] and not game.board[e][y + 1]:
+                        if y is not 4 and not game.board[x][y] and not game.board[x][y + 1]:
                             gameOver = False
                             break
 
-                    elif not game.board[e][y] and not game.board[e + 1][y]:
+                    elif not game.board[x][y] and not game.board[x + 1][y]:
                         gameOver = False
                         break
 
-                    elif not game.board[e][y] and not game.board[e][y + 1]:
+                    elif not game.board[x][y] and not game.board[x][y + 1]:
                         gameOver = False
                         break
 
@@ -159,8 +159,8 @@ class CramServer(Server):
         if gameOver:
             index = 0
             for game in self.games:
-                game.player1.Send({"action": "gameover", "torf": True})
-                game.player0.Send({"action": "gameover", "torf": True})
+                game.p1.Send({"action": "gameover", "torf": True})
+                game.p0.Send({"action": "gameover", "torf": True})
 
         self.Pump()
 
@@ -176,30 +176,31 @@ class Game:
         # Track which game
         self.gameID = gameID
 
-    def placeBlock(self, x1, y1, x2, y2, num, data):
+    def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         # make sure it's their turn
-        if num == self.turn:
+        alreadyplaced = self.board[y1][x1]
+        alreadyplaced2 = self.board[y2][x2]
+        if playerID == self.turn:
             if 0 <= x1 <= 4 and 0 <= y1 <= 4 and 0 <= x2 <= 4 and 0 <= y2 <= 4:
                 if x1 - x2 == 1 or x1 - x2 == 0 and 1 == y1 - y2 or y1 - y2 == 0:
-                    self.turn = 0 if self.turn else 1
-                    self.player1.Send({"action": "yourturn", "torf": True if self.turn == 1 else False})
-                    self.player0.Send({"action": "yourturn", "torf": True if self.turn == 0 else False})
+                    self.turn = 0 if self.turn == 1 else 1
+                    self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                                  "playerID": playerID, "turn": True if self.turn == 1 else False})
+                    self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                                  "playerID": playerID, "turn": True if self.turn == 0 else False})
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-                    # send data and turn data to each player
-                    self.player0.Send(data)
-                    self.player1.Send(data)
+
                 elif x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
                     self.turn = 0 if self.turn else 1
-                    self.player1.Send({"action": "yourturn", "torf": True if self.turn == 1 else False})
-                    self.player0.Send({"action": "yourturn", "torf": True if self.turn == 0 else False})
+                    self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                                  "playerID": playerID, "turn": True if self.turn == 1 else False})
+                    self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                                  "playerID": playerID, "turn": True if self.turn == 0 else False})
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-                    # send data and turn data to each player
-                    self.player0.Send(data)
-                    self.player1.Send(data)
 
 
 print "Starting Crunch-Platform..."
