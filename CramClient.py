@@ -11,12 +11,14 @@ class CramClient(ConnectionListener):
         self.Connect((host, prt))
         print "Welcome to the Crunch-Platform client portal"
         print "Ctrl-C to exit"
+
         """
         " Enter your team name when prompted >>
         """
         self.teamname = stdin.readline().rstrip("\n")
         connection.Send({"action": "teamname", "teamname": self.teamname})
         print "Connecting to Crunch-Platform..."
+
         """
         " Initializing the console
         """
@@ -32,13 +34,13 @@ class CramClient(ConnectionListener):
         while not self.selected:
             self.selectRoom()
 
-        self.selectplayer = False
-        while not self.selectplayer:
+        self.startgame = False
+        while not self.startgame:
             self.selectPlayer()
 
-        self.startgame = False
-
-
+    #################################
+    ###     Game options menu     ###
+    #################################
     def selectRoom(self):
         self.screen.fill(0)
         self.drawSelectScreen()
@@ -90,7 +92,8 @@ class CramClient(ConnectionListener):
         temp = pBoard
         try:
             if not temp[ypos][xpos]:
-                self.screen.blit(self.playerselector, [xpos * 64 + 5, (ypos * 64) + 10])
+                self.screen.blit(self.playerselector,
+                                 [xpos * 64 + 5, (ypos * 64) + 10])
         except:
             isoutofbounds = True
             pass
@@ -99,15 +102,15 @@ class CramClient(ConnectionListener):
         else:
             alreadyplaced = False
 
-        if pygame.mouse.get_pressed()[0] and not alreadyplaced and not isoutofbounds:
+        if pygame.mouse.get_pressed()[0] and not alreadyplaced \
+                and not isoutofbounds:
             opponent = self.teams[ypos + (xpos * 7)]
             print opponent
-            self.Send({"action": "selectplayer", "player": opponent})
-
-
+            self.Send({"action": "selectplayer",
+                       "player0": self.teamname,
+                       "player1": opponent})
         pygame.display.flip()
         sleep(0.1)
-
 
     def drawPlayerboard(self):
         self.screen.blit(self.gameroom, (0, 0))
@@ -119,18 +122,58 @@ class CramClient(ConnectionListener):
                 i += 1
 
 
-    def initGraphics(self):
-        self.gameroom = pygame.image.load("./images/GameRoom.png")
-        self.greenplayer = pygame.image.load("./images/greenplayer.png")
-        self.blueplayer = pygame.image.load("./images/blueplayer.png")
-        self.inactiveplayer = pygame.image.load("./images/inactiveplayer.png")
-        self.activeplayer = pygame.image.load("./images/activeplayer.png")
-        self.playerselector = pygame.image.load("./images/playerselector.png")
-        self.botimg = pygame.image.load("./images/bot.png")
+    #################################
+    ###         Cram Game         ###
+    #################################
+    def drawBoard(self):
+        for x in range(5):
+            for y in range(5):
+                self.screen.blit(self.normallineh, [(x) * 64 + 5, (y) * 64])
+                self.screen.blit(self.normallinev, [(x) * 64, (y) * 64 + 5])
+        for edge in range(5):
+            self.screen.blit(self.normallineh, [edge * 64 + 5, 5 * 64])
+            self.screen.blit(self.normallinev, [5 * 64, edge * 64 + 5])
+        for x in range(6):
+            for y in range(6):
+                self.screen.blit(self.separators, [x * 64, y * 64])
+        for x in range(5):
+            for y in range(5):
+                if self.board[y][x]:
+                    self.screen.blit(self.greenplayer, [(x * 64 + 5), (y) * 64 + 5])
 
-    def Loop(self):
+    def drawHUD(self):
+        self.screen.blit(self.score_panel, [0, 325])
+        myfont = pygame.font.SysFont(None, 32)
+        label = myfont.render("Your Turn:", 1, (255, 255, 255))
+
+        self.screen.blit(label, (10, 325))
+        self.screen.blit(self.greenindicator if self.turn else self.redindicator, (130, 340))
+
+        myfont64 = pygame.font.SysFont(None, 64)
+        myfont20 = pygame.font.SysFont(None, 20)
+
+        scoreme = myfont64.render(str(self.me), 1, (255, 255, 255))
+        scoreother = myfont64.render(str(self.otherplayer), 1, (255, 255, 255))
+        scoretextme = myfont20.render("You", 1, (255, 255, 255))
+        scoretextother = myfont20.render("Other Player", 1, (255, 255, 255))
+
+        self.screen.blit(scoretextme, (10, 370))
+        self.screen.blit(scoreme, (10, 380))
+        self.screen.blit(scoretextother, (240, 370))
+        self.screen.blit(scoreother, (270, 380))
+
+    def update(self):
         connection.Pump()
         self.Pump()
+
+    def finished(self):
+        self.screen.blit(self.gameover if not self.didiwin else self.winningscreen, (0, 0))
+        while 1:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
+            pygame.display.flip()
+
 
     #######################################
     ### Network event/message callbacks ###
@@ -147,15 +190,60 @@ class CramClient(ConnectionListener):
         print "Disconnected from Cram-Platform"
         exit()
 
+    ######################################
+    ### Room event/messages callbacks  ###
+    ######################################
     def Network_retpList(self, data):
         self.selected = True
         self.teams = data['players']
 
+    ######################################
+    ###  Cram game specific callbacks  ###
+    ######################################
+
+    def Network_startgame(self, data):
+        self.startgame = True
+        self.playerID = data['playerID']
+        self.gameID = data['gameID']
+
+
+    #####################################
+    ###       Game graphics           ###
+    #####################################
+
+    def initGraphics(self):
+        """
+        " Start menu graphics
+        """
+        self.gameroom = pygame.image.load("./images/GameRoom.png")
+        self.greenplayer = pygame.image.load("./images/greenplayer.png")
+        self.blueplayer = pygame.image.load("./images/blueplayer.png")
+        self.inactiveplayer = pygame.image.load("./images/inactiveplayer.png")
+        self.activeplayer = pygame.image.load("./images/activeplayer.png")
+        self.playerselector = pygame.image.load("./images/playerselector.png")
+        self.botimg = pygame.image.load("./images/bot.png")
+
+        """
+        " Game Graphics
+        """
+        self.normallinev = pygame.image.load("./images/normalline.png")
+        self.normallineh = pygame.transform.rotate(pygame.image.load("./images/normalline.png"), -90)
+        self.separators = pygame.image.load("./images/separators.png")
+        self.redindicator = pygame.image.load("./images/redindicator.png")
+        self.greenindicator = pygame.image.load("./images/greenindicator.png")
+        self.greenplayer = pygame.image.load("./images/greenplayer.png")
+        self.blueplayer = pygame.image.load("./images/blueplayer.png")
+        self.winningscreen = pygame.image.load("./images/youwin.png")
+        self.gameover = pygame.image.load("./images/gameover.png")
+        self.score_panel = pygame.image.load("./images/nscore_panel.png")
+        self.selector = pygame.image.load("./images/selector.png")
+
 
 cramClient = CramClient("localhost", 63400)
 while 1:
-    cramClient.Loop()
-    sleep(0.001)
+    if cramClient.update() == 1:
+        break
+cramClient.finished()
 
 
 
