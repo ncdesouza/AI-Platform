@@ -23,6 +23,22 @@ class CramClient(ConnectionListener):
         print "Connecting to Crunch-Platform..."
 
         """
+        " Initialize game settings
+        """
+        self.justplaced = 10
+        self.board = [[False for x in range(5)] for y in range(5)]
+        self.owner = [[None for x in range(5)] for y in range(5)]
+        self.me = 0
+        self.opponent = 0
+        self.didiwin = False
+        self.gameID = None
+        self.turn = False
+        self.clock = pygame.time.Clock()
+        self.clock.tick(60)
+        self.isgameover = False
+        self.playerID = None
+
+        """
         " Initializing the console
         """
         self.initGraphics()
@@ -34,7 +50,8 @@ class CramClient(ConnectionListener):
 
         self.teams = None
         self.selected = False
-        self.startgame = False
+        self.playerselect = False
+        self.begingame = False
         """
         " Select game type:
         "    Player Vs. Bot - Server bot
@@ -50,23 +67,16 @@ class CramClient(ConnectionListener):
         "   select your opponent from online players
         " << use your mouse >>
         """
-        while not self.startgame:
+        while not self.playerselect:
             self.selectPlayer()
 
-        """
-        " Initialize game settings
-        """
-        self.justplaced = 10
-        self.board = [[False for x in range(5)] for y in range(5)]
-        self.me = 0
-        self.opponent = 0
-        self.didiwin = False
-        self.gameID = None
-        self.turn = True
-        self.clock = pygame.time.Clock()
-        self.clock.tick(60)
-        self.isgameover = False
+        while not self.begingame:
+            self.Pump()
+            connection.Pump()
 
+        """
+        " Set game instance player roles
+        """
         if self.playerID == 0:
             self.turn = True
             self.marker = self.greenplayer
@@ -100,11 +110,11 @@ class CramClient(ConnectionListener):
 
         if pygame.mouse.get_pressed()[0]:
             if 200 < xpos < 250:
-                self.Send({"action": "getPlayers",
-                           "teamname": self.teamname})
+                connection.Send({"action": "getPlayers",
+                                 "teamname": self.teamname})
             if 100 < xpos < 150:
-                self.Send({"action": "botplay",
-                           "teamname": self.teamname})
+                connection.Send({"action": "botplay",
+                                 "teamname": self.teamname})
 
     def drawSelectScreen(self):
         self.screen.blit(self.gameroom, (0, 0))
@@ -151,14 +161,15 @@ class CramClient(ConnectionListener):
         if pygame.mouse.get_pressed()[0] and not alreadyplaced \
                 and not isoutofbounds:
             opponent = self.teams[ypos + (xpos * 7)]
-            self.Send({'action': "selectPlayer",
-                       'player0': self.teamname,
-                       'player1': opponent})
+            connection.Send({'action': "selectPlayer",
+                             'player0': self.teamname,
+                             'player1': opponent})
+            self.playerselect = True
         pygame.display.flip()
 
         """ Screen Refresh Method """
         # self.Send({"action": "getPlayers",
-        #            "teamname": self.teamname})
+        # "teamname": self.teamname})
 
         sleep(0.01)
 
@@ -171,7 +182,7 @@ class CramClient(ConnectionListener):
                 if i < len(self.teams):
                     self.screen.blit(self.activeplayer, [x * 64 + 5, y * 65 + 5 + 5])
                     playername = myfont20.render(self.teams[i], 1, (255, 255, 255))
-                    self.screen.blit(playername, [x * 64 + 5  + 15, y * 65 + 5 + 45])
+                    self.screen.blit(playername, [x * 64 + 5 + 15, y * 65 + 5 + 45])
                 else:
                     self.screen.blit(self.inactiveplayer, [x * 64 + 5, y * 65 + 5 + 5])
 
@@ -222,7 +233,6 @@ class CramClient(ConnectionListener):
         """
         " Main game loop
         """
-        self.justplaced -= 1
         connection.Pump()
         self.Pump()
 
@@ -234,8 +244,6 @@ class CramClient(ConnectionListener):
             # quit id the button is pressed
             if event.type == pygame.QUIT:
                 exit()
-
-        pygame.display.flip()
 
         if self.turn:
 
@@ -259,15 +267,9 @@ class CramClient(ConnectionListener):
                                     self.justplaced = 10
                                     self.board[y1][x1] = True
                                     self.board[y2][x2] = True
-                                    self.Send(
+                                    connection.Send(
                                         {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                         "num": self.playerID, "gameID": self.gameID})
-
-
-
-            print"x1 y1 x2 y2"
-            print x1, " ", y1, " ", x2, " ", y2
-
+                                         "num": self.playerID, "gameid": self.gameid})
         pygame.display.flip()
 
         if self.isgameover:
@@ -349,17 +351,21 @@ class CramClient(ConnectionListener):
         " Starts a game with another player
         """
         self.selected = True
-        self.startgame = True
+        self.playerselect = True
+        self.begingame = True
         self.playerID = data['playerID']
         self.gameID = data['gameID']
+        print "New Game Started >> Game: "\
+              + str(self.gameID)
 
-    def Network_place(self, data):
+    def Network_validmove(self, data):
         x1 = data['x1']
         y1 = data['y1']
         x2 = data['x2']
         y2 = data['y2']
-        self.board[y1][x1] = True
-        self.board[y2][x2] = True
+        num = data['num']
+        self.owner[y1][x1] = num
+        self.owner[y2][x2] = num
 
     def Network_yourturn(self, data):
         self.turn = data['torf']

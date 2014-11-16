@@ -24,7 +24,7 @@ class ClientChannel(Channel):
     def Network_teamname(self, data):
         self.teamname = data['teamname']
         print "new team: " + self.teamname
-        self._server.updatePList(data)
+        #self._server.updatePList(data)
 
     def Network_getPlayers(self, data):
         team = data['teamname']
@@ -50,7 +50,6 @@ class ClientChannel(Channel):
         y2 = data['y2']
         num = data['num']
         gameID = data['gameID']
-        print data
         self._server.placeBlock(x1, y1, x2, y2, gameID, num, data)
 
 
@@ -66,7 +65,7 @@ class CramServer(Server):
 
         self.games = []
         self.queue = None
-        self.gameID = 0
+        self.curindex = 0
 
         print 'Server Launched'
 
@@ -87,10 +86,10 @@ class CramServer(Server):
                              "players":
                                  [p.teamname for p in self.players if p.teamname != team]})
 
-    def updatePList(self, data):
-        for t in self.teams:
-                self.SendBack(t, {"action": "retpList",
-                                  "players": [p.teamname for p in self.players if p.teamname != t]})
+    # def updatePList(self, data):
+    #     for t in self.teams:
+    #             self.SendBack(t, {"action": "retpList",
+    #                               "players": [p.teamname for p in self.players if p.teamname != t]})
 
     def SendBack(self, teamname, data):
         player = [p for p in self.players if p.teamname == teamname]
@@ -108,19 +107,19 @@ class CramServer(Server):
     ##################################
 
     def newGame(self, player0, player1):
-        self.gameID += 1
+        self.curindex += 1
         p1 = [p for p in self.players if p.teamname == player0]
-        p2 = [p for p in self.players if p.teamname == player1]
-        self.queue = Game(p1[0], p2[0], self.gameID)
-        self.queue.player0.Send({"action": "startgame",
-                                 "teamname": player0,
-                                 "playerID": 0,
-                                 "gameID": self.gameID})
-        self.queue.player1.Send({"action": "startgame",
-                                 "teamname": player1,
-                                 "playerID": 1,
-                                 "gameID": self.gameID})
+        p0 = [s for s in self.players if s.teamname == player1]
+        self.queue = Game(p1[0], p0[0], self.curindex)
         self.games.append(self.queue)
+        self.queue.p0.Send({"action": "startgame",
+                            "teamname": p0[0].teamname,
+                            "playerID": 0,
+                            "gameID": self.curindex})
+        self.queue.p1.Send({"action": "startgame",
+                            "teamname": p1[0].teamname,
+                            "playerID": 1,
+                            "gameID": self.curindex})
         self.queue = None
 
     def placeBlock(self, x1, y1, x2, y2 , gameID, num, data):
@@ -128,8 +127,6 @@ class CramServer(Server):
         if len(game) == 1:
             game[0].placeBlock(x1, y1, x2, y2, num, data)
             print data
-
-
 
     def tick(self):
         index = 0
@@ -164,6 +161,7 @@ class CramServer(Server):
             for game in self.games:
                 game.player1.Send({"action": "gameover", "torf": True})
                 game.player0.Send({"action": "gameover", "torf": True})
+
         self.Pump()
 
 
@@ -173,8 +171,8 @@ class Game:
         self.turn = 0
         self.board = [[False for x in range(5)] for y in range(5)]
         # initialize the players
-        self.player0 = player0
-        self.player1 = player1
+        self.p0 = player0
+        self.p1 = player1
         # Track which game
         self.gameID = gameID
 

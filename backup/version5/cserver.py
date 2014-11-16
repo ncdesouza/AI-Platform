@@ -49,13 +49,6 @@ class CramServer(PodSixNet.Server.Server):
             # channel.gameid = self.currentIndex
             # self.queue = Game(channel, self.currentIndex)
         else:
-            self.currentIndex += 1
-            channel.pID = self.currentIndex
-            self.queue.players.append(channel)
-            self.queue.numPlayers = self.currentIndex
-            self.players.append(self.queue)
-
-
 
             # channel.gameid = self.currentIndex
             # self.queue.player1 = channel
