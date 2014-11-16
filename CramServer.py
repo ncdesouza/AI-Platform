@@ -24,6 +24,7 @@ class ClientChannel(Channel):
     def Network_teamname(self, data):
         self.teamname = data['teamname']
         print "new team: " + self.teamname
+        self._server.updatePList(data)
 
     def Network_getPlayers(self, data):
         team = data['teamname']
@@ -49,6 +50,7 @@ class ClientChannel(Channel):
         y2 = data['y2']
         num = data['num']
         gameID = data['gameID']
+        print data
         self._server.placeBlock(x1, y1, x2, y2, gameID, num, data)
 
 
@@ -85,6 +87,11 @@ class CramServer(Server):
                              "players":
                                  [p.teamname for p in self.players if p.teamname != team]})
 
+    def updatePList(self, data):
+        for t in self.teams:
+                self.SendBack(t, {"action": "retpList",
+                                  "players": [p.teamname for p in self.players if p.teamname != t]})
+
     def SendBack(self, teamname, data):
         player = [p for p in self.players if p.teamname == teamname]
         if len(player) == 1:
@@ -120,6 +127,7 @@ class CramServer(Server):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
             game[0].placeBlock(x1, y1, x2, y2, num, data)
+            print data
 
 
 

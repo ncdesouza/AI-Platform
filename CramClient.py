@@ -151,9 +151,16 @@ class CramClient(ConnectionListener):
         if pygame.mouse.get_pressed()[0] and not alreadyplaced \
                 and not isoutofbounds:
             opponent = self.teams[ypos + (xpos * 7)]
-            self.Send({'action': "selectPlayer", 'player0': self.teamname, 'player1': opponent})
+            self.Send({'action': "selectPlayer",
+                       'player0': self.teamname,
+                       'player1': opponent})
         pygame.display.flip()
-        sleep(0.1)
+
+        """ Screen Refresh Method """
+        # self.Send({"action": "getPlayers",
+        #            "teamname": self.teamname})
+
+        sleep(0.01)
 
     def drawPlayerboard(self):
         self.screen.blit(self.gameroom, (0, 0))
