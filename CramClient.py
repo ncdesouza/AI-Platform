@@ -65,7 +65,7 @@ class CramClient(ConnectionListener):
 
     def drawSelectScreen(self):
         self.screen.blit(self.gameroom, (0, 0))
-        self.screen.blit(self.blueplayer, (100, 100))
+        self.screen.blit(self.botimg, (100, 100))
         self.screen.blit(self.greenplayer, (200, 100))
 
     def selectPlayer(self):
