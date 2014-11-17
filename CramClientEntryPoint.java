@@ -13,6 +13,6 @@ public class CramClientEntryPoint {
          CramClientEntryPoint cramEntryPoint = new CramClientEntryPoint();
          GatewayServer gatewayServer = new GatewayServer(cramEntryPoint); 
          gatewayServer.start();
-         System.out.println("Gateway Server Started");        
+         System.out.println("Pyva Gateway Started");        
       }
 }
