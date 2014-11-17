@@ -267,37 +267,37 @@ class CramClient(ConnectionListener):
             return 1
 
     def makeMove(self):
-        x1 = random.randint(0, 4)
-        y1 = random.randint(0, 4)
+        # x1 = random.randint(0, 4)
+        # y1 = random.randint(0, 4)
+        #
+        # # x or y attached block
+        # xory = random.randint(0, 1)
+        # # negative or positive attached block
+        # norp = random.randint(0, 1)
+        # # ensures the values are within the array
+        # if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
+        #     c = -1
+        # elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
+        #     c = 1
+        # if xory == 0:
+        #     x2 = x1 + c
+        #     if x2 < 0 or x2 > 4:
+        #         x2 = x1 + (-c)
+        #     y2 = y1
+        # else:
+        #     y2 = y1 + c
+        #     if y2 < 0 or y2 > 4:
+        #         y2 = y1 + (-c)
+        #     x2 = x1
 
-        # x or y attached block
-        xory = random.randint(0, 1)
-        # negative or positive attached block
-        norp = random.randint(0, 1)
-        # ensures the values are within the array
-        if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
-            c = -1
-        elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
-            c = 1
-        if xory == 0:
-            x2 = x1 + c
-            if x2 < 0 or x2 > 4:
-                x2 = x1 + (-c)
-            y2 = y1
-        else:
-            y2 = y1 + c
-            if y2 < 0 or y2 > 4:
-                y2 = y1 + (-c)
-            x2 = x1
-
-        # from py4j.java_gateway import JavaGateway
-        # gateway = JavaGateway()
-        # entrypt = gateway.entry_point.getMove()
-        # result = entrypt.Move()
-        # y1 = result[0]
-        # x1 = result[1]
-        # y2 = result[2]
-        # x2 = result[3]
+        from py4j.java_gateway import JavaGateway
+        gateway = JavaGateway()
+        entrypt = gateway.entry_point.getMove()
+        result = entrypt.Move()
+        y1 = result[0]
+        x1 = result[1]
+        y2 = result[2]
+        x2 = result[3]
 
         return (y1, x1, y2, x2)
 
