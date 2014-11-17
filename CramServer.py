@@ -62,7 +62,7 @@ class CramServer(Server):
         Server.__init__(self, *args, **kwargs)
         self.players = WeakKeyDictionary()
         self.numTeams = 0
-        self.teams = {}
+        #self.teams = {}
 
         self.games = []
         self.queue = None
