@@ -132,6 +132,10 @@ class CramClient(ConnectionListener):
     def selectPlayer(self):
         connection.Pump()
         self.Pump()
+        try:
+            connection.Send({"action": "getPlayers", "teamname": self.teamname})
+        except:
+            pass
         i = 0
         pBoard = [[False for x in range(6)] for y in range(7)]
         for x in range(6):
@@ -216,7 +220,7 @@ class CramClient(ConnectionListener):
                 if self.owner[y][x] == 0:
                     self.screen.blit(self.selector, [(x * 64 + 5), (y) * 64 + 5])
                 if self.owner[y][x] == 1:
-                    self.screen.blit(self.blueplayer , [(x * 64 + 5), (y) * 64 + 5])
+                    self.screen.blit(self.blueplayer, [(x * 64 + 5), (y) * 64 + 5])
                 if self.owner[y][x] == 2:
                     self.screen.blit(self.masterblock, [(x * 64 + 5), (y) * 64 + 5])
 
@@ -394,7 +398,7 @@ class CramClient(ConnectionListener):
         self.begingame = True
         self.playerID = data['playerID']
         self.gameID = data['gameID']
-        print "New Game Started >> Game: "\
+        print "New Game Started >> Game: " \
               + str(self.gameID)
 
     def Network_validmove(self, data):
@@ -410,6 +414,7 @@ class CramClient(ConnectionListener):
         self.owner[y1][x1] = playerID
         self.owner[y2][x2] = playerID
         sleep(1)
+        pygame.time.set_timer
 
     def Network_invalidmove(self, data):
         print "invalid move"

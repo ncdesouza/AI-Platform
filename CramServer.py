@@ -1,7 +1,7 @@
 import random
 from time import sleep
 from weakref import WeakKeyDictionary
-
+from pygame.locals import *
 from PodSixNet.Server import Server
 from PodSixNet.Channel import Channel
 
@@ -31,7 +31,10 @@ class ClientChannel(Channel):
 
     def Network_getPlayers(self, data):
         team = data['teamname']
-        self._server.playerList(team, data)
+        try:
+            self._server.playerList(team, data)
+        except:
+            pass
 
     def Network_selectPlayer(self, data):
         player0 = data['player0']
@@ -109,9 +112,9 @@ class CramServer(Server):
             player[0].Send(data)
 
     def RmPlayer(self, player):
-        print "Removing Player" + str(player.addr)
-        rm = self.players.get(player)
-        print "Removing Player" + str(rm)
+        # rm = self.players.get(player)
+        rm = player.teamname
+        print "Removing Player " + str(rm) + " @" + str(player.addr)
         del self.players[player]
 
     ##################################
@@ -136,14 +139,13 @@ class CramServer(Server):
 
     def restart(self, gameID, playerID):
         game = [a for a in self.games if a.gameID == gameID]
-        # if len(game) == 1:
-        #     if playerID == 0:
-        #         game[0].p0 = None
-        #     else:
-        #         game[0].p1 = None
-        #     if game[0].p1 == None and game[0].p0 == None:
-        #         self.finished = self.games.pop(gameID)
-
+        if len(game) == 1:
+            if playerID == 0:
+                game[0].p0 = None
+            else:
+                game[0].p1 = None
+                # if game[0].p1 == None and game[0].p0 == None:
+                #         self.finished = self.games.pop(gameID)
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         game = [a for a in self.games if a.gameID == gameID]
@@ -184,7 +186,6 @@ class CramServer(Server):
                     game.p1.Send({"action": "gameover", "torf": True})
                 if game.p0 is not None:
                     game.p0.Send({"action": "gameover", "torf": True})
-
 
         self.Pump()
 
