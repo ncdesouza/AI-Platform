@@ -50,6 +50,15 @@ class CramClient(ConnectionListener):
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Cram Game - Hosted by Crunch-Platform")
 
+        self.playagain = False
+        self.endsession = False
+        self.mainMenu()
+
+    #################################
+    ###     Game options menu     ###
+    #################################
+
+    def mainMenu(self):
         self.teams = None
         self.selected = False
         self.playerselect = False
@@ -90,10 +99,6 @@ class CramClient(ConnectionListener):
 
         pygame.display.flip()
 
-
-    #################################
-    ###     Game options menu     ###
-    #################################
     def selectRoom(self):
         self.screen.fill(0)
         self.drawSelectScreen()
@@ -234,6 +239,11 @@ class CramClient(ConnectionListener):
         self.screen.blit(scoreother, (270, 380))
 
     def update(self):
+
+        if self.playagain:
+            self.mainMenu()
+            self.playagain = False
+
         """
         " Main game loop
         """
@@ -264,51 +274,60 @@ class CramClient(ConnectionListener):
         pygame.display.flip()
 
         if self.isgameover:
+            self.gameOver()
+
+        if self.endsession:
             return 1
 
     def makeMove(self):
-        # x1 = random.randint(0, 4)
-        # y1 = random.randint(0, 4)
-        #
-        # # x or y attached block
-        # xory = random.randint(0, 1)
-        # # negative or positive attached block
-        # norp = random.randint(0, 1)
-        # # ensures the values are within the array
-        # if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
-        #     c = -1
-        # elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
-        #     c = 1
-        # if xory == 0:
-        #     x2 = x1 + c
-        #     if x2 < 0 or x2 > 4:
-        #         x2 = x1 + (-c)
-        #     y2 = y1
-        # else:
-        #     y2 = y1 + c
-        #     if y2 < 0 or y2 > 4:
-        #         y2 = y1 + (-c)
-        #     x2 = x1
+        x1 = random.randint(0, 4)
+        y1 = random.randint(0, 4)
 
-        from py4j.java_gateway import JavaGateway
-        gateway = JavaGateway()
-        entrypt = gateway.entry_point.getMove()
-        result = entrypt.Move()
-        y1 = result[0]
-        x1 = result[1]
-        y2 = result[2]
-        x2 = result[3]
+        # x or y attached block
+        xory = random.randint(0, 1)
+        # negative or positive attached block
+        norp = random.randint(0, 1)
+        # ensures the values are within the array
+        if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
+            c = -1
+        elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
+            c = 1
+        if xory == 0:
+            x2 = x1 + c
+            if x2 < 0 or x2 > 4:
+                x2 = x1 + (-c)
+            y2 = y1
+        else:
+            y2 = y1 + c
+            if y2 < 0 or y2 > 4:
+                y2 = y1 + (-c)
+            x2 = x1
+
+        # from py4j.java_gateway import JavaGateway
+        # gateway = JavaGateway()
+        # entrypt = gateway.entry_point.getMove()
+        # result = entrypt.Move()
+        # y1 = result[0]
+        # x1 = result[1]
+        # y2 = result[2]
+        # x2 = result[3]
 
         return (y1, x1, y2, x2)
 
     def gameOver(self):
         self.screen.blit(
-            self.gameover if not self.didiwin else self.winningscreen,
-            (0, 0))
+            self.gameover if not self.didiwin else self.winningscreen, (0, 0))
+        self.screen.blit(self.playagainimg, (150, 400))
         while 1:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     exit()
+                elif pygame.mouse.get_pressed()[0]:
+                    self.playagain = True
+                    self.isgameover = False
+                    break
+            if self.playagain:
+                break
             pygame.display.flip()
 
 
@@ -398,6 +417,7 @@ class CramClient(ConnectionListener):
         self.activeplayer = pygame.image.load("./images/activeplayer.png")
         self.playerselector = pygame.image.load("./images/playerselector.png")
         self.botimg = pygame.image.load("./images/bot.png")
+        self.playagainimg = pygame.image.load("./images/playagain.png")
 
         """
         " Game Graphics
