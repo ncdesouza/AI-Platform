@@ -289,6 +289,16 @@ class CramClient(ConnectionListener):
             if y2 < 0 or y2 > 4:
                 y2 = y1 + (-c)
             x2 = x1
+
+        # from py4j.java_gateway import JavaGateway
+        # gateway = JavaGateway()
+        # entrypt = gateway.entry_point.getMove()
+        # result = entrypt.Move()
+        # y1 = result[0]
+        # x1 = result[1]
+        # y2 = result[2]
+        # x2 = result[3]
+
         return (y1, x1, y2, x2)
 
     def gameOver(self):
