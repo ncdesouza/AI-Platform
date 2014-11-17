@@ -62,7 +62,6 @@ class CramServer(Server):
         Server.__init__(self, *args, **kwargs)
         self.players = WeakKeyDictionary()
         self.numTeams = 0
-        #self.teams = {}
 
         self.games = []
         self.queue = None
@@ -82,15 +81,9 @@ class CramServer(Server):
         self.players[player] = True
 
     def playerList(self, team, data):
-
         self.SendBack(team, {"action": "retpList",
                              "players":
                                  [p.teamname for p in self.players if p.teamname != team]})
-
-    # def updatePList(self, data):
-    #     for t in self.teams:
-    #             self.SendBack(t, {"action": "retpList",
-    #                               "players": [p.teamname for p in self.players if p.teamname != t]})
 
     def SendBack(self, teamname, data):
         player = [p for p in self.players if p.teamname == teamname]

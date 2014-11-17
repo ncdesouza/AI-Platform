@@ -324,12 +324,24 @@ class CramClient(ConnectionListener):
                     exit()
                 elif pygame.mouse.get_pressed()[0]:
                     self.playagain = True
-                    self.isgameover = False
+                    self.reset()
                     break
             if self.playagain:
                 break
             pygame.display.flip()
 
+    def reset(self):
+        self.justplaced = 10
+        self.board = [[False for x in range(5)] for y in range(5)]
+        self.owner = [[None for x in range(5)] for y in range(5)]
+        self.turn = False
+        self.playerID = None
+        self.gameID = None
+
+        self.me = 0
+        self.opponent = 0
+        self.didiwin = False
+        self.isgameover = False
 
     #######################################
     ### Network event/message callbacks ###
