@@ -122,12 +122,17 @@ class CramClient(ConnectionListener):
             if 100 < xpos < 150:
                 connection.Send({"action": "botplay",
                                  "teamname": self.teamname})
+            if 160 < ypos < 210 and 125 < xpos < 175:
+                connection.Send({"action": "tournament",
+                                 "teamname": self.teamname})
+
 
     def drawSelectScreen(self):
         self.screen.blit(self.gameroom, (0, 0))
         self.screen.blit(self.leaderboard, (389, 0))
         self.screen.blit(self.botimg, (100, 100))
         self.screen.blit(self.greenplayer, (200, 100))
+        self.screen.blit(self.tournament, (125, 160))
 
     def selectPlayer(self):
         connection.Pump()
@@ -289,37 +294,37 @@ class CramClient(ConnectionListener):
             return 1
 
     def makeMove(self):
-        x1 = random.randint(0, 4)
-        y1 = random.randint(0, 4)
+        # x1 = random.randint(0, 4)
+        # y1 = random.randint(0, 4)
+        #
+        # # x or y attached block
+        # xory = random.randint(0, 1)
+        # # negative or positive attached block
+        # norp = random.randint(0, 1)
+        # # ensures the values are within the array
+        # if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
+        #     c = -1
+        # elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
+        #     c = 1
+        # if xory == 0:
+        #     x2 = x1 + c
+        #     if x2 < 0 or x2 > 4:
+        #         x2 = x1 + (-c)
+        #     y2 = y1
+        # else:
+        #     y2 = y1 + c
+        #     if y2 < 0 or y2 > 4:
+        #         y2 = y1 + (-c)
+        #     x2 = x1
 
-        # x or y attached block
-        xory = random.randint(0, 1)
-        # negative or positive attached block
-        norp = random.randint(0, 1)
-        # ensures the values are within the array
-        if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
-            c = -1
-        elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
-            c = 1
-        if xory == 0:
-            x2 = x1 + c
-            if x2 < 0 or x2 > 4:
-                x2 = x1 + (-c)
-            y2 = y1
-        else:
-            y2 = y1 + c
-            if y2 < 0 or y2 > 4:
-                y2 = y1 + (-c)
-            x2 = x1
-
-        # from py4j.java_gateway import JavaGateway
-        # gateway = JavaGateway()
-        # entrypt = gateway.entry_point.getMove()
-        # result = entrypt.Move()
-        # y1 = result[0]
-        # x1 = result[1]
-        # y2 = result[2]
-        # x2 = result[3]
+        from py4j.java_gateway import JavaGateway
+        gateway = JavaGateway()
+        entrypt = gateway.entry_point.getMove()
+        result = entrypt.Move()
+        y1 = result[0]
+        x1 = result[1]
+        y2 = result[2]
+        x2 = result[3]
 
         return (y1, x1, y2, x2)
 
@@ -414,7 +419,7 @@ class CramClient(ConnectionListener):
         self.owner[y1][x1] = playerID
         self.owner[y2][x2] = playerID
         sleep(1)
-        pygame.time.set_timer
+
 
     def Network_invalidmove(self, data):
         print "invalid move"
@@ -443,6 +448,7 @@ class CramClient(ConnectionListener):
         self.botimg = pygame.image.load("./images/bot.png")
         self.playagainimg = pygame.image.load("./images/playagain.png")
         self.leaderboard = pygame.image.load("./images/leaderboard.png")
+        self.tournament = pygame.image.load("./images/tournamentimg.png")
 
         """
         " Game Graphics
