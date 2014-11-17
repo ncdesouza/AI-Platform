@@ -177,9 +177,6 @@ class Game:
         self.gameID = gameID
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
-        # make sure it's their turn
-        alreadyplaced = self.board[y1][x1]
-        alreadyplaced2 = self.board[y2][x2]
         if playerID == self.turn:
             alreadyplaced = self.board[y1][x1]
             alreadyplaced2 = self.board[y2][x2]
