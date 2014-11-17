@@ -1,3 +1,4 @@
+import random
 from time import sleep
 from weakref import WeakKeyDictionary
 
@@ -8,6 +9,7 @@ from PodSixNet.Channel import Channel
 class ClientChannel(Channel):
     def __int__(self, *args, **kwargs):
         self.teamname = "Annyonmous"
+        self.ingame = False
         Channel.__init__(self, *args, **kwargs)
 
     ##################################
@@ -23,8 +25,9 @@ class ClientChannel(Channel):
 
     def Network_teamname(self, data):
         self.teamname = data['teamname']
+        self.ingame = data['ingame']
         print "new team: " + self.teamname
-        #self._server.updatePList(data)
+        # self._server.updatePList(data)
 
     def Network_getPlayers(self, data):
         team = data['teamname']
@@ -33,10 +36,16 @@ class ClientChannel(Channel):
     def Network_selectPlayer(self, data):
         player0 = data['player0']
         player1 = data['player1']
+        self._server.playerInGame(player1, player0)
         self._server.newGame(player0, player1)
 
     def Network_botplay(self, data):
         team = data['teamname']
+
+    def Network_restart(self, data):
+        gameID = data['gameID']
+        playerID = data['playerID']
+        self._server.restart(gameID, playerID)
 
 
     ##################################
@@ -55,7 +64,6 @@ class ClientChannel(Channel):
 
 
 class CramServer(Server):
-
     channelClass = ClientChannel
 
     def __init__(self, *args, **kwargs):
@@ -65,7 +73,8 @@ class CramServer(Server):
 
         self.games = []
         self.queue = None
-        self.curindex = 0
+        self.finished = []
+        self.curindex = -1
 
         print 'Server Launched'
 
@@ -80,10 +89,19 @@ class CramServer(Server):
         self.numTeams += 1
         self.players[player] = True
 
+    def playerInGame(self, player1, player0):
+        player = [p for p in self.players if p.teamname == player1]
+        if len(player) == 1:
+            player[0].ingame = True
+        player = [p for p in self.players if p.teamname == player0]
+        if len(player) == 1:
+            player[0].ingame = True
+
     def playerList(self, team, data):
         self.SendBack(team, {"action": "retpList",
                              "players":
-                                 [p.teamname for p in self.players if p.teamname != team]})
+                                 [p.teamname for p in self.players
+                                  if p.teamname != team and p.ingame == False]})
 
     def SendBack(self, teamname, data):
         player = [p for p in self.players if p.teamname == teamname]
@@ -116,7 +134,18 @@ class CramServer(Server):
                             "gameID": self.curindex})
         self.queue = None
 
-    def placeBlock(self, x1, y1, x2, y2 , gameID, playerID, turn, data):
+    def restart(self, gameID, playerID):
+        game = [a for a in self.games if a.gameID == gameID]
+        # if len(game) == 1:
+        #     if playerID == 0:
+        #         game[0].p0 = None
+        #     else:
+        #         game[0].p1 = None
+        #     if game[0].p1 == None and game[0].p0 == None:
+        #         self.finished = self.games.pop(gameID)
+
+
+    def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
             game[0].placeBlock(x1, y1, x2, y2, gameID, playerID, turn, data)
@@ -150,10 +179,12 @@ class CramServer(Server):
                     break
 
         if gameOver:
-            index = 0
             for game in self.games:
-                game.p1.Send({"action": "gameover", "torf": True})
-                game.p0.Send({"action": "gameover", "torf": True})
+                if game.p1 is not None:
+                    game.p1.Send({"action": "gameover", "torf": True})
+                if game.p0 is not None:
+                    game.p0.Send({"action": "gameover", "torf": True})
+
 
         self.Pump()
 
@@ -168,6 +199,30 @@ class Game:
         self.p1 = player1
         # Track which game
         self.gameID = gameID
+        self.masterBlock()
+
+    def masterBlock(self):
+        sameblock = True
+        while sameblock:
+            x1 = random.randint(0, 4)
+            y1 = random.randint(0, 4)
+            x2 = random.randint(0, 4)
+            y2 = random.randint(0, 4)
+            if 0 <= x1 <= 4 and 0 <= y1 <= 4 and 0 <= x2 <= 4 and 0 <= y2 <= 4:
+                isoutofbounds = False
+            else:
+                isoutofbounds = True
+            if x1 != x2 or y1 != y2 and not isoutofbounds:
+                sameblock = False
+
+        self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                      "playerID": 2, "turn": ""})
+        self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                      "playerID": 2, "turn": ""})
+        # place block in game
+        self.board[y1][x1] = True
+        self.board[y2][x2] = True
+
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         if playerID == self.turn:

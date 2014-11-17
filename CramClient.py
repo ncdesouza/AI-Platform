@@ -19,7 +19,7 @@ class CramClient(ConnectionListener):
         "   *        to keep gui clean          *
         """
         self.teamname = stdin.readline().rstrip("\n")
-        connection.Send({"action": "teamname", "teamname": self.teamname})
+        connection.Send({"action": "teamname", "teamname": self.teamname, "ingame": False})
         print "Connecting to Crunch-Platform..."
 
         """
@@ -46,7 +46,7 @@ class CramClient(ConnectionListener):
         self.initGraphics()
         pygame.init()
         pygame.font.init()
-        width, height = 600, 489
+        width, height = 600, 500
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Cram Game - Hosted by Crunch-Platform")
 
@@ -125,6 +125,7 @@ class CramClient(ConnectionListener):
 
     def drawSelectScreen(self):
         self.screen.blit(self.gameroom, (0, 0))
+        self.screen.blit(self.leaderboard, (389, 0))
         self.screen.blit(self.botimg, (100, 100))
         self.screen.blit(self.greenplayer, (200, 100))
 
@@ -181,7 +182,7 @@ class CramClient(ConnectionListener):
         sleep(0.01)
 
     def drawPlayerboard(self):
-        self.screen.blit(self.gameroom, (0, 0))
+        self.screen.blit(self.leaderboard, (389, 0))
         myfont20 = pygame.font.SysFont(None, 20)
         i = 0
         for x in range(6):
@@ -216,6 +217,8 @@ class CramClient(ConnectionListener):
                     self.screen.blit(self.selector, [(x * 64 + 5), (y) * 64 + 5])
                 if self.owner[y][x] == 1:
                     self.screen.blit(self.blueplayer , [(x * 64 + 5), (y) * 64 + 5])
+                if self.owner[y][x] == 2:
+                    self.screen.blit(self.masterblock, [(x * 64 + 5), (y) * 64 + 5])
 
     def drawHUD(self):
         self.screen.blit(self.score_panel, [0, 325])
@@ -237,6 +240,8 @@ class CramClient(ConnectionListener):
         self.screen.blit(scoreme, (10, 380))
         self.screen.blit(scoretextother, (240, 370))
         self.screen.blit(scoreother, (270, 380))
+
+        self.screen.blit(self.leaderboard, (389, 0))
 
     def update(self):
 
@@ -324,6 +329,8 @@ class CramClient(ConnectionListener):
                     exit()
                 elif pygame.mouse.get_pressed()[0]:
                     self.playagain = True
+                    sleep(2)
+                    connection.Send({"action": "restart", "playerID": self.playerID, "gameID": self.gameID})
                     self.reset()
                     break
             if self.playagain:
@@ -396,7 +403,8 @@ class CramClient(ConnectionListener):
         x2 = data['x2']
         y2 = data['y2']
         playerID = data['playerID']
-        self.turn = data['turn']
+        if playerID != 2:
+            self.turn = data['turn']
         self.board[y1][x1] = True
         self.board[y2][x2] = True
         self.owner[y1][x1] = playerID
@@ -405,7 +413,6 @@ class CramClient(ConnectionListener):
 
     def Network_invalidmove(self, data):
         print "invalid move"
-
 
     def Network_gameover(self, data):
         self.isgameover = True
@@ -430,6 +437,7 @@ class CramClient(ConnectionListener):
         self.playerselector = pygame.image.load("./images/playerselector.png")
         self.botimg = pygame.image.load("./images/bot.png")
         self.playagainimg = pygame.image.load("./images/playagain.png")
+        self.leaderboard = pygame.image.load("./images/leaderboard.png")
 
         """
         " Game Graphics
@@ -445,6 +453,7 @@ class CramClient(ConnectionListener):
         self.gameover = pygame.image.load("./images/gameover.png")
         self.score_panel = pygame.image.load("./images/nscore_panel.png")
         self.selector = pygame.image.load("./images/selector.png")
+        self.masterblock = pygame.image.load("./images/masterblock.png")
 
 
 cramClient = CramClient("localhost", 63400)
