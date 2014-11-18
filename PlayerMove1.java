@@ -3,7 +3,7 @@ import java.util.Random;
 import java.io.IOException;
 import java.lang.String.*;
 
-public class PlayerMove {
+public class PlayerMove1 {
 
 	public static String teamname;
 	public static char boardMatrix[][] = new char[5][5];
@@ -13,10 +13,10 @@ public class PlayerMove {
 	/**
 	 * Constructor
 	 */
-	public PlayerMove() {
+	public PlayerMove1() {
 
 		// Set your team name here:
-		teamname = "anon";
+		teamname = "alex";
 
 		// Construct the BoardMatrix and 
 		// StringAsBoard as free spaces

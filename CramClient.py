@@ -1,4 +1,4 @@
-import random
+from py4j.java_gateway import JavaGateway
 from time import sleep
 from sys import stdin, exit
 import pygame
@@ -9,16 +9,24 @@ from PodSixNet.Connection import connection, ConnectionListener
 
 class CramClient(ConnectionListener):
     def __init__(self, host, prt):
+        """
+        " Setup Java Python connection
+        """
+        self.gateway = JavaGateway()
+        self.pyva = self.gateway.entry_point.player0()
+
+        """
+        " Connect to Server
+        """
         self.Connect((host, prt))
         print "Welcome to the Crunch-Platform client portal"
-        print "Ctrl-C to exit"
 
         """
         " << Enter your  team name when prompted >>
         "  ** Please limit name to 4 characters **
         "   *        to keep gui clean          *
         """
-        self.teamname = stdin.readline().rstrip("\n")
+        self.teamname = self.pyva.getTeamname()
         connection.Send({"action": "teamname", "teamname": self.teamname, "ingame": False})
         print "Connecting to Crunch-Platform..."
 
@@ -341,10 +349,8 @@ class CramClient(ConnectionListener):
         #         y2 = y1 + (-c)
         #     x2 = x1
 
-        from py4j.java_gateway import JavaGateway
-        gateway = JavaGateway()
-        pyva = gateway.entry_point.getMove()
-        result = pyva.Move()
+
+        result = self.pyva.Move()
         y1 = result[0]
         x1 = result[1]
         y2 = result[2]
