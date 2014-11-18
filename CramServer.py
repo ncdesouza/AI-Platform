@@ -148,6 +148,8 @@ class CramServer(Server):
         if len(team) == 1:
             self.tournamentQ.append(team[0])
             self.tournamentQ[len(team) - 1].Send({"action": "enter"})
+            # if len(self.tournamentQ == 16):
+
             print self.tournamentQ[len(team) - 1].teamname
 
     def restart(self, gameID, playerID):

@@ -1,145 +1,149 @@
 import java.util.Scanner;
 import java.util.Random;
+import java.io.IOException;
+import java.lang.String.*;
 
 public class PlayerMove {
-	/**
-	 * IMPORTANT CHANGES:
-	 * 		1) Please set your team name in the constructor argument
-	 *		   *** Team names must be a maximum of 5 characters ***
-	 *          **    This request is to keep the GUI clean     **
-	 *           *      Please keep team names consistant       *
-	 *           
-	 *		2) Copy and paste your algorithm into the same area
-	 *         that was designated by Ryan in the previous version.
-	 *      
-	 *		3) This program will work with your algorithms the same 
-	 *         as before. It has been designed so that you will 
-	 *		   experience no integration issues.
-	 * 		
-	 * 		4) If you run this program, firstly it means you did not 
-	 *		   read this, secondly and more importantly running this 
-	 *		   program willnot do anything. This program is used as 
-	 *		   a implementation of a python program.
-	 *		
-	 *		5) Lastly, the platform has been compltly redesigned for
-	 *         preformance and asthetics. Please enjoy and use
-	 *         responcibly.
-	 *
-	 *       See README on how to connect to Crunch-Platform      
-	 */
 
-	public String teamname;
-	public String boardMatrix[][] = new char[5][5];;
-
+	public static String teamname;
+	public static char boardMatrix[][] = new char[5][5];
+	public static String boardAsString;
 	Scanner in = new Scanner(System.in);
-
+	
+	/**
+	 * Constructor
+	 */
 	public PlayerMove() {
 
 		// Set your team name here:
-		String teamname = "anon";
-		
+		teamname = "anon";
 
+		// Construct the BoardMatrix and 
+		// StringAsBoard as free spaces
 		for (int i = 0; i < 5; i++) {
-		
 			for (int j = 0; j < 5; j++) {
-		
-				boardMatrix[i][j] = null;  
-		
+				boardMatrix[i][j] = 'O';
+				// ?? For you string lovers...lol
+				boardAsString += 'O';  
 			}
 		}
 	}
 
 
-	/**
-	 * Move - This function will communicate with the server
-	 *		  Making changes to this function will render your 
-	 * 		  program useless.
-	 * @return move - An array of integer values representing
-	 *                a player move 
-	 */
-	public static int[] Move(char[] playerMove) {
+	/**																		
+	 * Move - 	This function communicates with the 
+	 *			server placing your move.
+	 *											
+	 * @param  	playerMove - An array fo chars to be 
+	 *						 converted to integers.										
+	 * @return 	move - An array of integers passed 
+	 * 				   to the server.				
+	 */																		
+	public static int[] Move() {							
+		int[] myMove = new int[4];											
+		myMove = decode(move());											
+		return myMove;														
+	}						
 
-		int[] myMove = new int[4];
-
-		myMove = decode(move());
-
-		return myMove;
-	}
-
-
-	/**
-	 * opMove - This function recieves your opponents move 
-	 *          from the server.
+																			
+	/**																		
+	 * otherMove -  This function recieves your oppon
+	 *				-ents move from the server.
 	 *
-	 */
-	public static char[] otherMove(int[] opMove) {
-
-		char[] move = new char[4];
-
-		move = encode(opMove);
-
-		return move;
-
-	}
-
-	public static int[] decode(char[] playerMove) {
-
-		int[] decoded = new int[4];
-		int temp = 0;
-
-		for (int i = 0; i < 4; i++) {
-			char puzzle = playerMove.charAt(i);
-			if (i == 0 || i == 2) {
-				if (puzzle == 'A') {
-					temp = 0;
-				} else if (puzzle == 'B') {
-					temp = 1;
-				} else if (puzzle == 'C') {
-					temp = 2;
-				} else if (puzzle == 'D') {
-					temp = 3;
-				} else if (puzzle == 'E') {
-					temp = 4;
-				} else {
-					break;
-				}
-			} else { 
-				temp = (int) puzzle;
-			}
-
-			decoded[i] = temp;
-		} 
-
-		return decoded;
-	}
+	 * @param	opMove - An array of integers that re
+	 *                   -presents your opponets move.											
+	 * @return 	move - A string that represents a move
+	 *                 made by your opponent.								
+	 */																		
+	public static String otherMove(int[] opMove) {							
+		String move = null;											
+		move = encode(opMove);												
+		return move;														
+	}																		
+	
+	/**
+	 * updateStringAsBoard:
+	 * 			This function updates the StingAsBoard
+	 * @param BoardMatrix - A matrix that represents the
+	 *                      current state of the board
+	 */												
+	 public static void updateStringAsBoard(int[][] boardMatrix) {
+	 	boardAsString = decomposeBoardMatrix(boardMatrix);
+	 }
 
 
-	public static char[] encode(int[] move) {
-		char[] encoded = new char[4];
-		char temp = Null;
-		 
+	/**
+	 * decode - This function decodes an a string 
+	 *			into a array of integers.
+	 *
+	 * @param	playerMove - A string that repres
+	 *          			 -ents your move.
+	 * @return 	decoded - An array of integers to
+	 *          		  that represents a move.
+	 */																		
+	public static int[] decode(String playerMove) {			
+		
+		int[] decoded = new int[4];											
+		int temp = 0;														
+																			
+		for (int i = 0; i < 4; i++) {										
+			char puzzle = playerMove.charAt(i);								
+			if (i == 0 || i == 2) {											
+				if (puzzle == 'A') {										
+					temp = 0;												
+				} else if (puzzle == 'B') {									
+					temp = 1;												
+				} else if (puzzle == 'C') {									
+					temp = 2;												
+				} else if (puzzle == 'D') {									
+					temp = 3;												
+				} else if (puzzle == 'E') {									
+					temp = 4;												
+				} else {													
+					break;													
+				}															
+			} else { 														
+				temp = (int) puzzle;										
+			}																														
+			decoded[i] = temp;												
+		} 																	
+		return decoded;														
+	}																		
+	
+
+	/**
+	 * encode - This function encodes an integer move
+	 *          recived from the server.
+	 *
+	 * @param 	move - An integer array that represents
+	 * 			       a move.
+	 * @return 	A									
+	 */																		
+	public static String encode(int[] move) {								
+										
+		char[] temp = new char[4];													
+		 																	
 		for (int i = 0; i < 4; i++) {
 			int puzzle = move[i];
 			if (i == 0 || i == 2) {
 				if (puzzle == 0) {
-					temp = 'A';
+					temp[i] = 'A';
 				} else if (puzzle == 1) {
-					temp = 'B';
+					temp[i] = 'B';
 				} else if (puzzle == 2) {
-					temp = 'C';
+					temp[i] = 'C';
 				} else if (puzzle == 3) {
-					temp = 'D';
+					temp[i] = 'D';
 				} else if (puzzle == 4) {
-					temp = 'E';
+					temp[i] = 'E';
 				} else {
 					break;
 				}
 			} else {
-				temp = puzzle;
+				temp[i] = (char) puzzle;
 			}
-
-			encoded[i] = temp;
 		}
+		String encoded = new String(temp);
 
 		return encoded;
 	}
@@ -147,39 +151,68 @@ public class PlayerMove {
 
 
 	/**
-	 * Not implemented yet
+	 * decomposeBoardMatrix:
+	 * 			This fuction recieves the updated board from 
+	 *          the server and converts it to a string.
 	 *
+	 * @param 	boardMatrix - A matrix of integers representing
+	 *						  the current state of the board. 
+	 * @return  decomposed - A string where each character 
+	 *						 represents a block on the board.
 	 */
-	public String boardAsString(int[][] board) {
-		for (int i = 0; i < 25; i++) {
+	public static String decomposeBoardMatrix(int[][] board) {
 
+		String decomposed = null;
+		for (int i = 0; i < 5; i++) {
+			for (int j = 1; j < 5; j++) {
+				if (board[i][j] == 0) {
+					boardAsString += 'R';
+				} else if (board[i][j] == 1) {
+					boardAsString += 'B';
+				} else if (board[i][j] == 2) {
+					boardAsString += 'M';
+				} else {
+					boardAsString += 'O';
+				}
+			}
 		}
+		return decomposed;
 	}
 
 
-
-	
 	/**
-	 * Orignial method - Place your algorithm int here
-	 *
+	 * composeBoard:
+	 *		This function takes a the boardAsString and 
+	 *      converts updates the boardMatrix 
 	 *
 	 */
-	public static char[] move() throws IOException{ // can remove exception when user input is removed
+	public static int composeBoard(String boardAsString) {
+		return 0;
+	}
+
+	
+	/**::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	 * Orignial method - Place your algorithm int here:::::::::::::::::::::::::::::::::::::::::::::::::::
+	 * ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	 * ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	 */
+	public static String move() {
 			
-			char[] playerMove = null;
+			String playerMove = null;
 			
-			// System.out.println("Board as matrix");
+			System.out.println("Board as matrix");
 			
-			// for(int index = 0; index < 25; index++){
+			for (int index = 0; index < 25; index++) {
 				
-			// 	boardMatrix[index%5][index/5] = boardAsString.charAt(index);
-			// 	if(index%5 == 4)
-			// 		System.out.print(boardMatrix[index%5][index/5] + "\n");
-			// 	else
-			// 		System.out.print(boardMatrix[index%5][index/5] + " ");
+				boardMatrix[index%5][index/5] = boardAsString.charAt(index);
+				if (index%5 == 4) {
+					System.out.print(boardMatrix[index%5][index/5] + "\n");
+				} else {
+					System.out.print(boardMatrix[index%5][index/5] + " ");
+				}
 				
-			// }
-			//ystem.out.println("Previous move: " + otherMove());
+			}
+			// System.out.println("Previous move: " + otherMove());
 			
 			
 			///////////////////////////////////////////////////////
@@ -204,7 +237,7 @@ public class PlayerMove {
 			////////////////////////////////////////////////////////
 			
 			System.out.println("Enter move (for testing, to be replaced with algorithm):");
-			playerMove = encode(myMove()); // for now move is just user input, for testing, replace this with your algorithm when ready
+			playerMove = encode(myMove()); 
 			
 			
 			
@@ -220,15 +253,14 @@ public class PlayerMove {
 		 * randMove():
 		 * 		This is the basic algorithm I used to test the
 		 *      server. 
+		 *
 		 * @return move - returns and array of interger valuse
 		 *                representing a player move
 		 */
 		public static int[] myMove() {
 
-			int[] move = new int[4];
-
 			Random rd = new Random();
-
+			int[] move = new int[4];
 
 			// This sets x1 y1
 			int x1 = rd.nextInt(5);
@@ -263,13 +295,17 @@ public class PlayerMove {
 			move[2] = x2;
 			move[3] = y2;
 
+			for (int i = 0; i < 4; i++) {
+				System.out.println(move[i]);
+			}
+
 			return move;
 		}
 
 
 		/**
 		 * manualMove():
-		 * 		
+		 * 		Enables you to enter your moves manually.
 		 * @return move - returns an array of integer values
 		 *				  representing a move
 		 */
