@@ -62,6 +62,7 @@ class CramClient(ConnectionListener):
         self.teams = None
         self.selected = False
         self.playerselect = False
+        self.tBegin = False
         self.begingame = False
         """
         " Select game type:
@@ -80,6 +81,9 @@ class CramClient(ConnectionListener):
         """
         while not self.playerselect:
             self.selectPlayer()
+
+        while not self.tBegin:
+            self.tWaiting()
 
         while not self.begingame:
             self.Pump()
@@ -125,6 +129,7 @@ class CramClient(ConnectionListener):
             if 160 < ypos < 210 and 125 < xpos < 175:
                 connection.Send({"action": "tournament",
                                  "teamname": self.teamname})
+                sleep(1)
 
 
     def drawSelectScreen(self):
@@ -205,10 +210,29 @@ class CramClient(ConnectionListener):
 
                 i += 1
 
+    #################################
+    ###     Tournament Mode       ###
+    #################################
+
+    def tWaiting(self):
+        self.screen.fill(0)
+        self.drawTwaiting()
+        pygame.display.flip()
+        connection.Pump()
+        self.Pump()
+
+
+    def drawTwaiting(self):
+        self.screen.blit(self.gameroom, (0, 0))
+        myfont = pygame.font.SysFont(None, 64)
+        label = myfont.render("Waiting", 1, (255, 255, 255))
+        self.screen.blit(label, (235, 300))
+
 
     #################################
     ###         Cram Game         ###
     #################################
+
     def drawBoard(self):
         for x in range(5):
             for y in range(5):
@@ -382,6 +406,14 @@ class CramClient(ConnectionListener):
         self.teams = data['players']
 
     ######################################
+    ###   Tournament event/messages    ###
+    ######################################
+    def Network_enter(self, data):
+        self.selected = True
+        self.playerselect = True
+        self.tWaiting()
+
+    ######################################
     ###  Cram game specific callbacks  ###
     ######################################
 
@@ -400,6 +432,7 @@ class CramClient(ConnectionListener):
         """
         self.selected = True
         self.playerselect = True
+        self.tBegin = True
         self.begingame = True
         self.playerID = data['playerID']
         self.gameID = data['gameID']

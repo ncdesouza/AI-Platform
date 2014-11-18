@@ -45,6 +45,10 @@ class ClientChannel(Channel):
     def Network_botplay(self, data):
         team = data['teamname']
 
+    def Network_tournament(self, data):
+        teamname = data['teamname']
+        self._server.tournament(teamname)
+
     def Network_restart(self, data):
         gameID = data['gameID']
         playerID = data['playerID']
@@ -78,6 +82,8 @@ class CramServer(Server):
         self.queue = None
         self.finished = []
         self.curindex = -1
+
+        self.tournamentQ = []
 
         print 'Server Launched'
 
@@ -137,6 +143,13 @@ class CramServer(Server):
                             "gameID": self.curindex})
         self.queue = None
 
+    def tournament(self, teamname):
+        team = [p for p in self.players if p.teamname == teamname]
+        if len(team) == 1:
+            self.tournamentQ.append(team[0])
+            self.tournamentQ[len(team) - 1].Send({"action": "enter"})
+            print self.tournamentQ[len(team) - 1].teamname
+
     def restart(self, gameID, playerID):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
@@ -145,7 +158,7 @@ class CramServer(Server):
             else:
                 game[0].p1 = None
                 # if game[0].p1 == None and game[0].p0 == None:
-                #         self.finished = self.games.pop(gameID)
+                # self.finished = self.games.pop(gameID)
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         game = [a for a in self.games if a.gameID == gameID]
