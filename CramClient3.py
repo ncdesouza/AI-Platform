@@ -3,7 +3,6 @@ from time import sleep
 from sys import stdin, exit
 import pygame
 import math
-import thread
 
 from PodSixNet.Connection import connection, ConnectionListener
 
@@ -14,7 +13,7 @@ class CramClient(ConnectionListener):
         " Setup Java Python connection
         """
         self.gateway = JavaGateway(auto_convert=True)
-        self.pyva = self.gateway.entry_point.player0()
+        self.pyva = self.gateway.entry_point.player3()
 
         """
         " Connect to Server
@@ -34,6 +33,7 @@ class CramClient(ConnectionListener):
         """
         " Initialize game settings
         """
+        self.justplaced = 10
         self.board = [[False for x in range(5)] for y in range(5)]
         self.owner = [[None for x in range(5)] for y in range(5)]
         self.turn = False
@@ -44,7 +44,6 @@ class CramClient(ConnectionListener):
         self.opponent = 0
         self.didiwin = False
         self.isgameover = False
-        self.ismoveready = False
 
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
@@ -294,6 +293,7 @@ class CramClient(ConnectionListener):
         """
         " Main game loop
         """
+        self.justplaced -= 1
         connection.Pump()
         self.Pump()
 
@@ -308,10 +308,15 @@ class CramClient(ConnectionListener):
                 exit()
 
         if self.turn:
-            if not self.ismoveready:
-                self.ismoveready = True
-                thread.start_new_thread(self.makeMove, ())
 
+            y1, x1, y2, x2 = self.makeMove()
+
+            if self.justplaced <= 0:
+                self.justplaced = 10
+                connection.Send(
+                    {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+                     "playerID": self.playerID, "turn": self.turn,
+                     "gameID": self.gameID})
         pygame.display.flip()
 
         if self.isgameover:
@@ -321,15 +326,37 @@ class CramClient(ConnectionListener):
             return 1
 
     def makeMove(self):
+        # x1 = random.randint(0, 4)
+        # y1 = random.randint(0, 4)
+        #
+        # # x or y attached block
+        # xory = random.randint(0, 1)
+        # # negative or positive attached block
+        # norp = random.randint(0, 1)
+        # # ensures the values are within the array
+        # if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
+        #     c = -1
+        # elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
+        #     c = 1
+        # if xory == 0:
+        #     x2 = x1 + c
+        #     if x2 < 0 or x2 > 4:
+        #         x2 = x1 + (-c)
+        #     y2 = y1
+        # else:
+        #     y2 = y1 + c
+        #     if y2 < 0 or y2 > 4:
+        #         y2 = y1 + (-c)
+        #     x2 = x1
+
+
         result = self.pyva.Move()
         y1 = result[0]
         x1 = result[1]
         y2 = result[2]
         x2 = result[3]
-        connection.Send(
-            {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-             "playerID": self.playerID, "turn": self.turn,
-             "gameID": self.gameID})
+
+        return (y1, x1, y2, x2)
 
     def gameOver(self):
         self.screen.blit(
@@ -419,7 +446,6 @@ class CramClient(ConnectionListener):
               + str(self.gameID)
 
     def Network_validmove(self, data):
-        self.ismoveready = False
         x1 = data['x1']
         y1 = data['y1']
         x2 = data['x2']
@@ -438,7 +464,6 @@ class CramClient(ConnectionListener):
         sleep(2)
 
     def Network_invalidmove(self, data):
-        self.ismoveready = False
         print "invalid move"
 
     def Network_gameover(self, data):
