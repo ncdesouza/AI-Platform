@@ -14,7 +14,7 @@ class CramClient(ConnectionListener):
         " Setup Java Python connection
         """
         self.gateway = JavaGateway(auto_convert=True)
-        self.pyva = self.gateway.entry_point.player0()
+        self.pyva = self.gateway.entry_point.player4()
 
         """
         " Connect to Server
