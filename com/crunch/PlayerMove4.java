@@ -1,7 +1,9 @@
+import java.util.Scanner;
 import java.util.Random;
 import java.util.List;
 import java.io.IOException;
 import java.lang.String.*;
+
 
 public class PlayerMove4 {
 
@@ -9,7 +11,6 @@ public class PlayerMove4 {
 	public static char boardMatrix[][] = new char[5][5];
 	public static String boardAsString;
 	public static String previousMove;
-	Scanner in = new Scanner(System.in);
 	
 	/**
 	 * Constructor
@@ -314,31 +315,5 @@ public class PlayerMove4 {
 
 			return move;
 		}
-
-
-		/**
-		 * manualMove():
-		 * 		Enables you to enter your moves manually.
-		 * @return move - returns an array of integer values
-		 *				  representing a move
-		 */
-		public int[] manualMove() {
-			
-			int[] move = new int[4];
-
-			System.out.println("x1: ");
-	        move[0] = in.nextInt();
-	        System.out.println("y1: ");
-	        move[1] = in.nextInt();
-	        System.out.println("x2: ");
-	        move[2] = in.nextInt();
-	        System.out.println("y2: ");
-	        move[3] = in.nextInt();
-
-	        return move;
-		}
-
-		
-	
 
 }

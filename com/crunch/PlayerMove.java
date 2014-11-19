@@ -1,9 +1,10 @@
+import java.util.Scanner;
 import java.util.Random;
 import java.util.List;
 import java.io.IOException;
 import java.lang.String.*;
 
-public class PlayerMove4 {
+public class PlayerMove {
 
 	public static String teamname;
 	public static char boardMatrix[][] = new char[5][5];
@@ -14,10 +15,10 @@ public class PlayerMove4 {
 	/**
 	 * Constructor
 	 */
-	public PlayerMove4() {
+	public PlayerMove() {
 
 		// Set your team name here:
-		teamname = "Tom";
+		teamname = "anon";
 
 		// Construct the BoardMatrix and 
 		// StringAsBoard as free spaces
@@ -73,13 +74,13 @@ public class PlayerMove4 {
 			conv[i] = (int) opMove.get(i);
 			System.out.print(conv[i]);
 		}
-		System.out.print(" : ");											
+		System.out.print(" : ");		
 		previousMove = encode(conv);												
 		System.out.println(previousMove);
-	
+
 	}																		
 
-	 /**
+	/**
 	 * updateBoardMatrix
 	 *			This function recieves the current state of
 	 *          the board from the Server and updates the 
@@ -167,6 +168,7 @@ public class PlayerMove4 {
 		return decoded;														
 	}																		
 	
+
 	/**
 	 * encode - This function encodes an integer move
 	 *          recived from the server.
@@ -203,7 +205,7 @@ public class PlayerMove4 {
 
 		return encoded;
 	}
-
+	
 	/**::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	 * Orignial method - Place your algorithm int here:::::::::::::::::::::::::::::::::::::::::::::::::::
 	 * ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -337,8 +339,6 @@ public class PlayerMove4 {
 
 	        return move;
 		}
-
-		
 	
 
 }

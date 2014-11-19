@@ -1,9 +1,14 @@
+import java.util.Scanner;
 import java.util.Random;
 import java.util.List;
 import java.io.IOException;
 import java.lang.String.*;
+import java.lang.ArrayIndexOutOfBoundsException;
 
-public class PlayerMove4 {
+public class PlayerMove3 {
+	public static cramCalc calculation;
+
+	//
 
 	public static String teamname;
 	public static char boardMatrix[][] = new char[5][5];
@@ -14,10 +19,10 @@ public class PlayerMove4 {
 	/**
 	 * Constructor
 	 */
-	public PlayerMove4() {
+	public PlayerMove3() {
 
 		// Set your team name here:
-		teamname = "Tom";
+		teamname = "Matt";
 
 		// Construct the BoardMatrix and 
 		// StringAsBoard as free spaces
@@ -52,8 +57,14 @@ public class PlayerMove4 {
 	 * 				   to the server.				
 	 */																		
 	public static int[] Move() {							
-		int[] myMove = new int[4];											
-		myMove = decode(move());											
+		int[] myMove = new int[4];
+		try {											
+			myMove = decode(move());
+		} catch (ArrayIndexOutOfBoundsException e) {
+			myMove = decode(move());
+		}
+
+		System.out.println(myMove);											
 		return myMove;														
 	}						
 																		
@@ -73,13 +84,13 @@ public class PlayerMove4 {
 			conv[i] = (int) opMove.get(i);
 			System.out.print(conv[i]);
 		}
-		System.out.print(" : ");											
+		System.out.print(" : ");		
 		previousMove = encode(conv);												
 		System.out.println(previousMove);
-	
+
 	}																		
 
-	 /**
+	/**
 	 * updateBoardMatrix
 	 *			This function recieves the current state of
 	 *          the board from the Server and updates the 
@@ -167,6 +178,7 @@ public class PlayerMove4 {
 		return decoded;														
 	}																		
 	
+
 	/**
 	 * encode - This function encodes an integer move
 	 *          recived from the server.
@@ -182,15 +194,15 @@ public class PlayerMove4 {
 		for (int i = 0; i < 4; i++) {
 			int puzzle = move[i];
 			if (i == 0 || i == 2) {
-				if (puzzle == 0) {
+				if (puzzle == 1) {
 					temp[i] = 'A';
-				} else if (puzzle == 1) {
-					temp[i] = 'B';
 				} else if (puzzle == 2) {
-					temp[i] = 'C';
+					temp[i] = 'B';
 				} else if (puzzle == 3) {
-					temp[i] = 'D';
+					temp[i] = 'C';
 				} else if (puzzle == 4) {
+					temp[i] = 'D';
+				} else if (puzzle == 5) {
 					temp[i] = 'E';
 				} else {
 					break;
@@ -203,7 +215,7 @@ public class PlayerMove4 {
 
 		return encoded;
 	}
-
+	
 	/**::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	 * Orignial method - Place your algorithm int here:::::::::::::::::::::::::::::::::::::::::::::::::::
 	 * ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -249,8 +261,8 @@ public class PlayerMove4 {
 			// NOTE ALONG WITH THE GIVE BOARD ... THE PREVIOUS MOVE IS AVAILABLE IN STRING previousMove
 			//
 			////////////////////////////////////////////////////////
-			
-			playerMove = encode(myMove()); 
+			System.out.println("Enter move (for testing, to be replaced with algorithm):");
+			playerMove = calculation.move(boardMatrix);//inputLine.readLine(); // for now move is just user input, for testing, replace this with your algorithm when ready
 			
 			
 			
@@ -261,84 +273,7 @@ public class PlayerMove4 {
 			return playerMove;
 			
 		}
-
-		/**
-		 * randMove():
-		 * 		This is the basic algorithm I used to test the
-		 *      server. 
-		 *
-		 * @return move - returns and array of interger valuse
-		 *                representing a player move
-		 */
-		public static int[] myMove() {
-
-			Random rd = new Random();
-			int[] move = new int[4];
-
-			// This sets x1 y1
-			int x1 = rd.nextInt(5);
-			int y1 = rd.nextInt(5);
-			int x2 = 0;
-			int y2 = 0;
-
-			int xory = rd.nextInt(2);
-			int norp = rd.nextInt(2);
-			int c = 0;
-			if (norp == 0) {
-				c = -1;
-			} else {
-			 	c = 1;
-			}
-			if (xory == 1) {
-				x2 = x1 + c;
-				if (x2 < 0 || x2 > 4) {
-					x2 = x1 + (-c);
-				}
-				y2 = y1;
-			} else {
-				y2 = y1 + c;
-				if (y2 < 0 || y2 > 4) {
-					y2 = y1 + (-c);
-				}
-				x2 = x1;
-			}
-
-			move[0] = x1;
-			move[1] = y1;
-			move[2] = x2;
-			move[3] = y2;
-
-			// for (int i = 0; i < 4; i++) {
-			// 	System.out.println(move[i]);
-			// }
-
-			return move;
-		}
-
-
-		/**
-		 * manualMove():
-		 * 		Enables you to enter your moves manually.
-		 * @return move - returns an array of integer values
-		 *				  representing a move
-		 */
-		public int[] manualMove() {
-			
-			int[] move = new int[4];
-
-			System.out.println("x1: ");
-	        move[0] = in.nextInt();
-	        System.out.println("y1: ");
-	        move[1] = in.nextInt();
-	        System.out.println("x2: ");
-	        move[2] = in.nextInt();
-	        System.out.println("y2: ");
-	        move[3] = in.nextInt();
-
-	        return move;
-		}
-
 		
-	
-
 }
+
+	

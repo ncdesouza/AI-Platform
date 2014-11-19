@@ -1,9 +1,10 @@
+import java.util.Scanner;
 import java.util.Random;
 import java.util.List;
 import java.io.IOException;
 import java.lang.String.*;
 
-public class PlayerMove4 {
+public class PlayerMove1 {
 
 	public static String teamname;
 	public static char boardMatrix[][] = new char[5][5];
@@ -14,10 +15,10 @@ public class PlayerMove4 {
 	/**
 	 * Constructor
 	 */
-	public PlayerMove4() {
+	public PlayerMove1() {
 
 		// Set your team name here:
-		teamname = "Tom";
+		teamname = "alex";
 
 		// Construct the BoardMatrix and 
 		// StringAsBoard as free spaces
