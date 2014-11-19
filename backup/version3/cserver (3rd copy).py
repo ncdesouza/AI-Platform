@@ -38,10 +38,10 @@ class CramServer(PodSixNet.Server.Server):
             channel.gameid = self.currentIndex
             self.queue.player1 = channel
             self.queue.player0.Send({"action": "startgame",
-                                     "player": 0,
+                                     "client": 0,
                                      "gameid": self.queue.gameid})
             self.queue.player1.Send({"action": "startgame",
-                                     "player": 1,
+                                     "client": 1,
                                      "gameid": self.queue.gameid})
             self.games.append(self.queue)
             self.queue = None
@@ -72,7 +72,7 @@ class Game:
             self.player0.Send({"action": "yourturn", "torf": True if self.turn == 0 else False})
             #place line in game
             self.board[y1][x1] = True
-        #send data and turn data to each player
+        #send data and turn data to each client
         self.player0.Send(data)
         self.player1.Send(data)
 

@@ -6,7 +6,7 @@ from time import sleep
 class CramGame(ConnectionListener):
 	def Network_startgame(self, data):
 		self.running = True
-		self.num = data["player"]
+		self.num = data["client"]
 		self.gameid = data["gameid"]
 
 	def __init__(self):

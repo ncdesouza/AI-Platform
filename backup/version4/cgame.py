@@ -7,7 +7,7 @@ from time import sleep
 class CramGame(ConnectionListener):
     def Network_startgame(self, data):
         self.running = True
-        self.num = data["player"]
+        self.num = data["client"]
         self.gameid = data["gameid"]
 
     def Network_place(self, data):
@@ -15,7 +15,7 @@ class CramGame(ConnectionListener):
         y1 = data["y1"]
         self.board[y1][x1] = True
 
-    # Signals which player's turn it is
+    # Signals which client's turn it is
     def Network_yourturn(self, data):
         # torf = short for true or false
         self.turn = data["torf"]

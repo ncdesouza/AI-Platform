@@ -14,7 +14,7 @@ class CramClient(ConnectionListener):
         " Setup Java Python connection
         """
         self.gateway = JavaGateway(auto_convert=True)
-        self.pyva = self.gateway.entry_point.player4()
+        self.pyva = self.gateway.entry_point.player3()
 
         """
         " Connect to Server
@@ -75,7 +75,7 @@ class CramClient(ConnectionListener):
         self.begingame = False
         """
         " Select game type:
-        "    Player Vs. Bot - Server bot
+        "    Player Vs. Bot - Server bots
         "    Player Vs. Player - Play against opponent
         " << use your mouse >>
         """
@@ -83,7 +83,7 @@ class CramClient(ConnectionListener):
             self.selectRoom()
 
         """
-        " Select player:
+        " Select client:
         "   If Player Vs. Player option was selected
         "   select your opponent from online players
         " << use your mouse >>
@@ -99,7 +99,7 @@ class CramClient(ConnectionListener):
             connection.Pump()
 
         """
-        " Set game instance player roles
+        " Set game instance client roles
         """
         if self.playerID == 0:
             self.turn = True
@@ -220,7 +220,7 @@ class CramClient(ConnectionListener):
                 i += 1
 
     #################################
-    ###     Tournament Mode       ###
+    ###     tournament Mode       ###
     #################################
 
     def tWaiting(self):
@@ -389,7 +389,7 @@ class CramClient(ConnectionListener):
         self.teams = data['players']
 
     ######################################
-    ###   Tournament event/messages    ###
+    ###   tournament event/messages    ###
     ######################################
     def Network_enter(self, data):
         self.selected = True
@@ -402,7 +402,7 @@ class CramClient(ConnectionListener):
 
     def Network_botplay(self, data):
         """
-        " Starts a game with the server bot
+        " Starts a game with the server bots
         """
         self.selected = True
         self.startgame = True
@@ -411,7 +411,7 @@ class CramClient(ConnectionListener):
 
     def Network_startgame(self, data):
         """
-        " Starts a game with another player
+        " Starts a game with another client
         """
         self.selected = True
         self.playerselect = True
@@ -475,7 +475,7 @@ class CramClient(ConnectionListener):
         self.inactiveplayer = pygame.image.load("./images/inactiveplayer.png")
         self.activeplayer = pygame.image.load("./images/activeplayer.png")
         self.playerselector = pygame.image.load("./images/playerselector.png")
-        self.botimg = pygame.image.load("./images/bot.png")
+        self.botimg = pygame.image.load("./images/bots.png")
         self.playagainimg = pygame.image.load("./images/playagain.png")
         self.leaderboard = pygame.image.load("./images/leaderboard.png")
         self.tournament = pygame.image.load("./images/tournamentimg.png")

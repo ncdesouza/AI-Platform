@@ -19,7 +19,7 @@ class CramGame(ConnectionListener):
 
     def Network_startgame(self, data):
         self.running = True
-        self.num = data["player"]
+        self.num = data["client"]
         self.gameid = data["gameid"]
 
     def Network_place(self, data):
@@ -34,7 +34,7 @@ class CramGame(ConnectionListener):
     def Network_close(self, data):
         exit()
 
-    # Signals which player's turn it is
+    # Signals which client's turn it is
     def Network_yourturn(self, data):
         self.turn = data["torf"]
 
@@ -142,7 +142,7 @@ class CramGame(ConnectionListener):
         if pygame.mouse.get_pressed()[0]:
                 opponent = self.pBoard[xpos][ypos]
 
-        self.Send({"action": "selectplayer", "pID": self.pID, "player": opponent})
+        self.Send({"action": "selectplayer", "pID": self.pID, "client": opponent})
 
 
     def drawRoom(self):

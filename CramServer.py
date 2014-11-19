@@ -77,7 +77,6 @@ class CramServer(Server):
 
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
-        self.gameOver = True
         self.players = WeakKeyDictionary()
         self.numTeams = 0
 
@@ -121,7 +120,7 @@ class CramServer(Server):
             player[0].Send(data)
 
     def RmPlayer(self, player):
-        # rm = self.players.get(player)
+        # rm = self.players.get(client)
         rm = player.teamname
         print "Removing Player " + str(rm) + " @" + str(player.addr)
         del self.players[player]
@@ -148,10 +147,16 @@ class CramServer(Server):
 
     def tournament(self, teamname):
         team = [p for p in self.players if p.teamname == teamname]
+        finished = [False, False]
         if len(team) == 1:
             self.tournamentQ.append(team[0])
             self.tournamentQ[len(team) - 1].Send({"action": "enter"})
-            # if len(self.tournamentQ == 16):
+            if len(self.tournamentQ) == 4:
+                for rounds in range(2):
+                    game1 = thread.start_new_thread(self.newGame, (self.tournamentQ[0], self.tournamentQ[1]))
+                    game2 = thread.start_new_thread(self.newGame, (self.tournamentQ[2], self.tournamentQ[3]))
+
+
 
             print self.tournamentQ[len(team) - 1].teamname
 
@@ -159,11 +164,11 @@ class CramServer(Server):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
             if playerID == 0:
-                game[0].p1.ingame = False
-                del game[0].p1
-            else:
                 game[0].p0.ingame = False
                 del game[0].p0
+            else:
+                game[0].p1.ingame = False
+                del game[0].p1
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         game = [a for a in self.games if a.gameID == gameID]
@@ -171,60 +176,53 @@ class CramServer(Server):
             game[0].placeBlock(x1, y1, x2, y2, gameID, playerID, turn, data)
 
     def tick(self):
-        self.gameOver = True
         for game in self.games:
-            if game.gamefin is False:
+            if not game.gameOver:
                 thread.start_new_thread(self.timer, ())
-
+                temp = True
                 for x in range(0, 5):
                     for y in range(0, 5):
                         if y is 4:
+                            if x is 4:
+                                game.gameOver = True
+                                if game.turn == 1:
+                                    game.p0score = 25 - game.p1score
+                                else:
+                                    game.p1score = 25 - game.p0score
+                                game.p1.Send({"action": "gameover", "torf": True,
+                                              "mscore": game.p1score, "opscore": game.p0score})
+                                game.p0.Send({"action": "gameover", "torf": True,
+                                              "mscore": game.p0score, "opscore": game.p1score})
+                                break
                             if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:
-                                self.gameOver = False
+                                temp = False
                                 break
-
                         elif x is 4:
-
                             if y is not 4 and not game.board[x][y] and not game.board[x][y + 1]:
-                                self.gameOver = False
+                                temp = False
                                 break
-
                         elif not game.board[x][y] and not game.board[x + 1][y]:
-                            self.gameOver = False
+                            temp = False
                             break
-
                         elif not game.board[x][y] and not game.board[x][y + 1]:
-                            self.gameOver = False
+                            temp = False
                             break
-
-                    if not self.gameOver:
+                    if not temp:
                         break
-
-                if self.gameOver:
-                    for game in self.games:
-                        if game.gamefin is not True:
-                            if game.turn == 1:
-                                game.p0score = 25 - game.p1score
-                            else:
-                                game.p1score = 25 - game.p0score
-                            game.p1.Send({"action": "gameover", "torf": True,
-                                          "mscore": game.p1score, "opscore": game.p0score})
-                            game.p0.Send({"action": "gameover", "torf": True,
-                                          "mscore": game.p0score, "opscore": game.p1score})
-                            game.gamefin = True
         self.Pump()
 
     def timer(self):
         # Timer Control
         for game in self.games:
-            timer = 90 - ((pygame.time.get_ticks() - game.time) // 1000)
-            game.p0.Send({"action": "timer", "time": timer})
-            game.p1.Send({"action": "timer", "time": timer})
-            if timer <= 0:
-                game.turn = 0 if game.turn == 1 else 1
-                game.p1.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
-                game.p0.Send({"action": "timesup", "turn": True if game.turn == 0 else False})
-                game.time = pygame.time.get_ticks()
+            if not game.gameOver:
+                timer = 90 - ((pygame.time.get_ticks() - game.time) // 1000)
+                game.p0.Send({"action": "timer", "time": timer})
+                game.p1.Send({"action": "timer", "time": timer})
+                if timer <= 0:
+                    game.turn = 0 if game.turn == 1 else 1
+                    game.p1.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
+                    game.p0.Send({"action": "timesup", "turn": True if game.turn == 0 else False})
+                    game.time = pygame.time.get_ticks()
 
 
 class Game:
@@ -238,14 +236,12 @@ class Game:
         self.p1 = player1
         self.p0score = 0
         self.p1score = 0
-        self.gamefin = False
+        self.gameOver = False
         # Track which game
         self.gameID = gameID
         self.masterBlock()
         pygame.init()
         self.time = pygame.time.get_ticks()
-
-
 
     def masterBlock(self):
         sameblock = True
@@ -270,7 +266,6 @@ class Game:
         self.board[y2][x2] = True
         self.owner[y1][x1] = 2
         self.owner[y2][x2] = 2
-
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         if playerID == self.turn:
@@ -328,7 +323,6 @@ class Game:
             self.p1.Send({"action": "invalidmove"})
         else:
             self.p0.Send({"action": "invalidmove"})
-
 
 print "Starting Crunch-Platform..."
 cramServer = CramServer(localaddr=("localhost", 27000))

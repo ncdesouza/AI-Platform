@@ -52,13 +52,13 @@ class CramServer(PodSixNet.Server.Server):
 
             # channel.gameid = self.currentIndex
             # self.queue.player1 = channel
-            # self.queue.player0.Send({"action": "startgame", "player": 0, "gameid": self.queue.gameid})
-            # self.queue.player1.Send({"action": "startgame", "player": 1, "gameid": self.queue.gameid})
+            # self.queue.player0.Send({"action": "startgame", "client": 0, "gameid": self.queue.gameid})
+            # self.queue.player1.Send({"action": "startgame", "client": 1, "gameid": self.queue.gameid})
             # self.games.append(self.queue)
             # self.queue = None
 
 
-    # << Dynamically create the player list and return to caller >>
+    # << Dynamically create the client list and return to caller >>
     def playerList(self, pID, data):
         player = [p for p in self.players if p.pID == pID]
         if len(player) == 1:
@@ -171,7 +171,7 @@ class Game:
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-                    # send data and turn data to each player
+                    # send data and turn data to each client
                     self.player0.Send(data)
                     self.player1.Send(data)
                 if x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
@@ -181,7 +181,7 @@ class Game:
                     # place block in game
                     self.board[y1][x1] = True
                     self.board[y2][x2] = True
-                    # send data and turn data to each player
+                    # send data and turn data to each client
                     self.player0.Send(data)
                     self.player1.Send(data)
 
