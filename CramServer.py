@@ -5,6 +5,7 @@ from pygame.locals import *
 from PodSixNet.Server import Server
 from PodSixNet.Channel import Channel
 import pygame
+import thread
 
 
 class ClientChannel(Channel):
@@ -76,6 +77,7 @@ class CramServer(Server):
 
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
+        self.gameOver = True
         self.players = WeakKeyDictionary()
         self.numTeams = 0
 
@@ -157,11 +159,11 @@ class CramServer(Server):
         game = [a for a in self.games if a.gameID == gameID]
         if len(game) == 1:
             if playerID == 0:
-                game[0].p0 = None
+                game[0].p1.ingame = False
+                del game[0].p1
             else:
-                game[0].p1 = None
-                # if game[0].p1 == None and game[0].p0 == None:
-                # self.finished = self.games.pop(gameID)
+                game[0].p0.ingame = False
+                del game[0].p0
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
         game = [a for a in self.games if a.gameID == gameID]
@@ -169,50 +171,60 @@ class CramServer(Server):
             game[0].placeBlock(x1, y1, x2, y2, gameID, playerID, turn, data)
 
     def tick(self):
-        gameOver = True
+        self.gameOver = True
+        for game in self.games:
+            if game.gamefin is False:
+                thread.start_new_thread(self.timer, ())
+
+                for x in range(0, 5):
+                    for y in range(0, 5):
+                        if y is 4:
+                            if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:
+                                self.gameOver = False
+                                break
+
+                        elif x is 4:
+
+                            if y is not 4 and not game.board[x][y] and not game.board[x][y + 1]:
+                                self.gameOver = False
+                                break
+
+                        elif not game.board[x][y] and not game.board[x + 1][y]:
+                            self.gameOver = False
+                            break
+
+                        elif not game.board[x][y] and not game.board[x][y + 1]:
+                            self.gameOver = False
+                            break
+
+                    if not self.gameOver:
+                        break
+
+                if self.gameOver:
+                    for game in self.games:
+                        if game.gamefin is not True:
+                            if game.turn == 1:
+                                game.p0score = 25 - game.p1score
+                            else:
+                                game.p1score = 25 - game.p0score
+                            game.p1.Send({"action": "gameover", "torf": True,
+                                          "mscore": game.p1score, "opscore": game.p0score})
+                            game.p0.Send({"action": "gameover", "torf": True,
+                                          "mscore": game.p0score, "opscore": game.p1score})
+                            game.gamefin = True
+        self.Pump()
+
+    def timer(self):
+        # Timer Control
         for game in self.games:
             timer = 90 - ((pygame.time.get_ticks() - game.time) // 1000)
             game.p0.Send({"action": "timer", "time": timer})
             game.p1.Send({"action": "timer", "time": timer})
             if timer <= 0:
+                game.turn = 0 if game.turn == 1 else 1
                 game.p1.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
-                game.p0.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
+                game.p0.Send({"action": "timesup", "turn": True if game.turn == 0 else False})
                 game.time = pygame.time.get_ticks()
-
-            print (timer // 1000)
-
-            for x in range(0, 5):
-                for y in range(0, 5):
-                    if y is 4:
-                        if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:
-                            gameOver = False
-                            break
-
-                    elif x is 4:
-
-                        if y is not 4 and not game.board[x][y] and not game.board[x][y + 1]:
-                            gameOver = False
-                            break
-
-                    elif not game.board[x][y] and not game.board[x + 1][y]:
-                        gameOver = False
-                        break
-
-                    elif not game.board[x][y] and not game.board[x][y + 1]:
-                        gameOver = False
-                        break
-
-                if not gameOver:
-                    break
-
-        if gameOver:
-            for game in self.games:
-                if game.p1 is not None:
-                    game.p1.Send({"action": "gameover", "torf": True})
-                if game.p0 is not None:
-                    game.p0.Send({"action": "gameover", "torf": True})
-
-        self.Pump()
 
 
 class Game:
@@ -220,9 +232,13 @@ class Game:
         # Track which players turn
         self.turn = 0
         self.board = [[False for x in range(5)] for y in range(5)]
+        self.owner = [[None for x in range(5)] for y in range(5)]
         # initialize the players
         self.p0 = player0
         self.p1 = player1
+        self.p0score = 0
+        self.p1score = 0
+        self.gamefin = False
         # Track which game
         self.gameID = gameID
         self.masterBlock()
@@ -252,6 +268,8 @@ class Game:
         # place block in game
         self.board[y1][x1] = True
         self.board[y2][x2] = True
+        self.owner[y1][x1] = 2
+        self.owner[y2][x2] = 2
 
 
     def placeBlock(self, x1, y1, x2, y2, gameID, playerID, turn, data):
@@ -267,23 +285,37 @@ class Game:
                 if not alreadyplaced and not alreadyplaced2:
                     if x1 - x2 == 1 or x1 - x2 == 0 and 1 == y1 - y2 or y1 - y2 == 0:
                         self.turn = 0 if self.turn == 1 else 1
+                        self.p0score += 1 if self.turn == 1 else 0
+                        self.p1score += 1 if self.turn == 0 else 0
                         self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                      "playerID": playerID, "turn": True if self.turn == 1 else False})
+                                      "playerID": playerID, "turn": True if self.turn == 1 else False,
+                                      "mscore": self.p1score, "opscore": self.p0score})
                         self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                      "playerID": playerID, "turn": True if self.turn == 0 else False})
+                                      "playerID": playerID, "turn": True if self.turn == 0 else False,
+                                      "mscore": self.p0score, "opscore": self.p1score})
                         # place block in game
                         self.board[y1][x1] = True
                         self.board[y2][x2] = True
+                        self.owner[y1][x1] = playerID
+                        self.owner[y2][x2] = playerID
                         self.time = pygame.time.get_ticks()
                     elif x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
-                        self.turn = 0 if self.turn else 1
+                        self.turn = 0 if self.turn == 1 else 1
+                        self.p0score += 1 if self.turn == 1 else 0
+                        self.p1score += 1 if self.turn == 0 else 0
                         self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                      "playerID": playerID, "turn": True if self.turn == 1 else False})
+                                      "playerID": playerID, "turn": True if self.turn == 1 else False,
+                                      "mscore": self.p1score, "opscore": self.p0score})
                         self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                                      "playerID": playerID, "turn": True if self.turn == 0 else False})
+                                      "playerID": playerID, "turn": True if self.turn == 0 else False,
+                                      "mscore": self.p0score, "opscore": self.p1score})
                         # place block in game
                         self.board[y1][x1] = True
                         self.board[y2][x2] = True
+                        self.owner[y1][x1] = playerID
+                        self.owner[y2][x2] = playerID
+                        sleep(2)
+                        self.time = pygame.time.get_ticks()
                     else:
                         self.invalidMove(playerID, data)
                 else:
