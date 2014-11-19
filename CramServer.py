@@ -4,6 +4,7 @@ from weakref import WeakKeyDictionary
 from pygame.locals import *
 from PodSixNet.Server import Server
 from PodSixNet.Channel import Channel
+import pygame
 
 
 class ClientChannel(Channel):
@@ -168,9 +169,18 @@ class CramServer(Server):
             game[0].placeBlock(x1, y1, x2, y2, gameID, playerID, turn, data)
 
     def tick(self):
-        index = 0
         gameOver = True
         for game in self.games:
+            timer = 90 - ((pygame.time.get_ticks() - game.time) // 1000)
+            game.p0.Send({"action": "timer", "time": timer})
+            game.p1.Send({"action": "timer", "time": timer})
+            if timer <= 0:
+                game.p1.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
+                game.p0.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
+                game.time = pygame.time.get_ticks()
+
+            print (timer // 1000)
+
             for x in range(0, 5):
                 for y in range(0, 5):
                     if y is 4:
@@ -216,6 +226,10 @@ class Game:
         # Track which game
         self.gameID = gameID
         self.masterBlock()
+        pygame.init()
+        self.time = pygame.time.get_ticks()
+
+
 
     def masterBlock(self):
         sameblock = True
@@ -260,6 +274,7 @@ class Game:
                         # place block in game
                         self.board[y1][x1] = True
                         self.board[y2][x2] = True
+                        self.time = pygame.time.get_ticks()
                     elif x2 - x1 == 1 or x2 - x1 == 0 and y2 - y1 == 1 or y2 - y1 == 0:
                         self.turn = 0 if self.turn else 1
                         self.p1.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
@@ -272,7 +287,7 @@ class Game:
                     else:
                         self.invalidMove(playerID, data)
                 else:
-                        self.invalidMove(playerID, data)
+                    self.invalidMove(playerID, data)
             else:
                 self.invalidMove(playerID, data)
 

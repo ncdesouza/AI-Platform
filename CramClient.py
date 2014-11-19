@@ -46,6 +46,7 @@ class CramClient(ConnectionListener):
         self.isgameover = False
         self.ismoveready = False
 
+        self.timer = 90
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
 
@@ -277,11 +278,13 @@ class CramClient(ConnectionListener):
         scoreother = myfont64.render(str(self.opponent), 1, (255, 255, 255))
         scoretextme = myfont20.render("You", 1, (255, 255, 255))
         scoretextother = myfont20.render("Other Player", 1, (255, 255, 255))
+        countdown = myfont64.render(str(self.timer), 1, (255, 255, 255))
 
         self.screen.blit(scoretextme, (10, 370))
         self.screen.blit(scoreme, (10, 380))
         self.screen.blit(scoretextother, (240, 370))
         self.screen.blit(scoreother, (270, 380))
+        self.screen.blit(countdown, (10, 425))
 
         self.screen.blit(self.leaderboard, (389, 0))
 
@@ -444,8 +447,11 @@ class CramClient(ConnectionListener):
     def Network_gameover(self, data):
         self.isgameover = True
 
-    def Network_yourturn(self, data):
-        self.turn = data['torf']
+    def Network_timer(self, data):
+        self.timer = data['time']
+
+    def Network_timesup(self, data):
+        self.turn = data['turn']
 
 
     #####################################
