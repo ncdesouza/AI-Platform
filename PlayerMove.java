@@ -1,5 +1,6 @@
 import java.util.Scanner;
 import java.util.Random;
+import java.util.List;
 import java.io.IOException;
 import java.lang.String.*;
 
@@ -8,6 +9,7 @@ public class PlayerMove {
 	public static String teamname;
 	public static char boardMatrix[][] = new char[5][5];
 	public static String boardAsString;
+	public static String previousMove;
 	Scanner in = new Scanner(System.in);
 	
 	/**
@@ -27,6 +29,8 @@ public class PlayerMove {
 				boardAsString += 'O';  
 			}
 		}
+
+		previousMove = null;
 	}
 
 	/**
@@ -38,7 +42,6 @@ public class PlayerMove {
 	public static String getTeamname() {
 		return teamname;
 	}
-
 
 	/**																		
 	 * Move - 	This function communicates with the 
@@ -54,10 +57,9 @@ public class PlayerMove {
 		myMove = decode(move());											
 		return myMove;														
 	}						
-
-																			
+																		
 	/**																		
-	 * otherMove -  This function recieves your oppon
+	 * opMove -  This function recieves your oppon
 	 *				-ents move from the server.
 	 *
 	 * @param	opMove - An array of integers that re
@@ -65,22 +67,68 @@ public class PlayerMove {
 	 * @return 	move - A string that represents a move
 	 *                 made by your opponent.								
 	 */																		
-	public static String otherMove(int[] opMove) {							
-		String move = null;											
-		move = encode(opMove);												
-		return move;														
-	}																		
-	
-	/**
-	 * updateStringAsBoard:
-	 * 			This function updates the StingAsBoard
-	 * @param BoardMatrix - A matrix that represents the
-	 *                      current state of the board
-	 */												
-	 public static void updateStringAsBoard(int[][] boardMatrix) {
-	 	boardAsString = decomposeBoardMatrix(boardMatrix);
-	 }
+	public static void opMove(List opMove) {
+		int[] conv = new int[4];
+		System.out.print(teamname + ": ");
+		for (int i = 0; i < 4; i++) {
+			conv[i] = (int) opMove.get(i);
+			System.out.print(conv[i]);
+		}
+		System.out.print(" : ");		
+		previousMove = encode(conv);												
+		System.out.println(previousMove);
 
+	}																		
+
+	/**
+	 * updateBoardMatrix
+	 *			This function recieves the current state of
+	 *          the board from the Server and updates the 
+	 *			boardMatrix
+	 * @param board - A matrix representing the current board
+	 *                state
+	 */
+	public static void updateBoard(List<List> board) {
+		for (int i = 0; i < 5; i++) {
+			for (int j = 0; j < 5; j++) {
+				if (board.get(i).get(j) == null) {
+					boardMatrix[i][j] = 'O';
+					if (i == 0 && j ==0) {
+						boardAsString = "O";
+					} else {
+						boardAsString += 'O';
+					}
+				} else  if (board.get(i).get(j) == 0) {
+					boardMatrix[i][j] = 'R';
+					if (i == 0 && j ==0) {
+						boardAsString = "R";
+					} else {
+						boardAsString += 'R';
+					}
+				} else if (board.get(i).get(j) == 1) {
+					boardMatrix[i][j] = 'B';
+					if (i == 0 && j ==0) {
+						boardAsString = "B";
+					} else {
+						boardAsString += 'B';
+					}
+				} else if (board.get(i).get(j) == 2) {
+					boardMatrix[i][j] = 'M';
+					if (i == 0 && j ==0) {
+						boardAsString = "M";
+					} else {
+						boardAsString += 'M';
+					}
+				}
+				System.out.print(boardMatrix[i][j]);
+				if (j == 4) {
+					System.out.println();
+				}
+			}
+		}
+		System.out.println(boardAsString);
+		System.out.println();
+	}
 
 	/**
 	 * decode - This function decodes an a string 
@@ -113,7 +161,7 @@ public class PlayerMove {
 					break;													
 				}															
 			} else { 														
-				temp = (int) puzzle;										
+				temp = Character.getNumericValue(puzzle);										
 			}																														
 			decoded[i] = temp;												
 		} 																	
@@ -150,56 +198,13 @@ public class PlayerMove {
 					break;
 				}
 			} else {
-				temp[i] = (char) puzzle;
+				temp[i] = Character.forDigit(puzzle,10);
 			}
 		}
 		String encoded = new String(temp);
 
 		return encoded;
 	}
-
-
-
-	/**
-	 * decomposeBoardMatrix:
-	 * 			This fuction recieves the updated board from 
-	 *          the server and converts it to a string.
-	 *
-	 * @param 	boardMatrix - A matrix of integers representing
-	 *						  the current state of the board. 
-	 * @return  decomposed - A string where each character 
-	 *						 represents a block on the board.
-	 */
-	public static String decomposeBoardMatrix(int[][] board) {
-
-		String decomposed = null;
-		for (int i = 0; i < 5; i++) {
-			for (int j = 1; j < 5; j++) {
-				if (board[i][j] == 0) {
-					boardAsString += 'R';
-				} else if (board[i][j] == 1) {
-					boardAsString += 'B';
-				} else if (board[i][j] == 2) {
-					boardAsString += 'M';
-				} else {
-					boardAsString += 'O';
-				}
-			}
-		}
-		return decomposed;
-	}
-
-
-	/**
-	 * composeBoard:
-	 *		This function takes a the boardAsString and 
-	 *      converts updates the boardMatrix 
-	 *
-	 */
-	public static int composeBoard(String boardAsString) {
-		return 0;
-	}
-
 	
 	/**::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 	 * Orignial method - Place your algorithm int here:::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -210,19 +215,20 @@ public class PlayerMove {
 			
 			String playerMove = null;
 			
-			System.out.println("Board as matrix");
+
+			//System.out.println("Board as matrix");
 			
-			for (int index = 0; index < 25; index++) {
+			// for (int index = 0; index < 25; index++) {
 				
-				boardMatrix[index%5][index/5] = boardAsString.charAt(index);
-				if (index%5 == 4) {
-					System.out.print(boardMatrix[index%5][index/5] + "\n");
-				} else {
-					System.out.print(boardMatrix[index%5][index/5] + " ");
-				}
+			// 	boardMatrix[index%5][index/5] = boardAsString.charAt(index);
+			// 	if (index%5 == 4) {
+			// 		System.out.print(boardMatrix[index%5][index/5] + "\n");
+			// 	} else {
+			// 		System.out.print(boardMatrix[index%5][index/5] + " ");
+			// 	}
 				
-			}
-			// System.out.println("Previous move: " + otherMove());
+			// }
+			//System.out.println("Previous move: " + previousMove);
 			
 			
 			///////////////////////////////////////////////////////
@@ -304,9 +310,9 @@ public class PlayerMove {
 			move[2] = x2;
 			move[3] = y2;
 
-			for (int i = 0; i < 4; i++) {
-				System.out.println(move[i]);
-			}
+			// for (int i = 0; i < 4; i++) {
+			// 	System.out.println(move[i]);
+			// }
 
 			return move;
 		}

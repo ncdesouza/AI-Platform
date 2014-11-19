@@ -12,7 +12,7 @@ class CramClient(ConnectionListener):
         """
         " Setup Java Python connection
         """
-        self.gateway = JavaGateway()
+        self.gateway = JavaGateway(auto_convert=True)
         self.pyva = self.gateway.entry_point.player1()
 
         """
@@ -20,6 +20,7 @@ class CramClient(ConnectionListener):
         """
         self.Connect((host, prt))
         print "Welcome to the Crunch-Platform client portal"
+
         """
         " << Enter your  team name when prompted >>
         "  ** Please limit name to 4 characters **
@@ -348,6 +349,7 @@ class CramClient(ConnectionListener):
         #         y2 = y1 + (-c)
         #     x2 = x1
 
+
         result = self.pyva.Move()
         y1 = result[0]
         x1 = result[1]
@@ -455,7 +457,11 @@ class CramClient(ConnectionListener):
         self.board[y2][x2] = True
         self.owner[y1][x1] = playerID
         self.owner[y2][x2] = playerID
-        sleep(1)
+        if self.turn:
+            previousMove = [x1, y1, x2, y2]
+            self.pyva.opMove(previousMove)
+        self.pyva.updateBoard(self.owner)
+        sleep(2)
 
     def Network_invalidmove(self, data):
         print "invalid move"
@@ -503,7 +509,7 @@ class CramClient(ConnectionListener):
         self.masterblock = pygame.image.load("./images/masterblock.png")
 
 
-cramClient = CramClient("localhost", 63400)
+cramClient = CramClient("localhost", 27000)
 while 1:
     if cramClient.update() == 1:
         break
