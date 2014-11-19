@@ -345,7 +345,6 @@ class CramClient(ConnectionListener):
                     exit()
                 elif pygame.mouse.get_pressed()[0]:
                     self.playagain = True
-                    sleep(2)
                     connection.Send({"action": "restart", "playerID": self.playerID, "gameID": self.gameID})
                     self.reset()
                     break
@@ -364,6 +363,8 @@ class CramClient(ConnectionListener):
         self.opponent = 0
         self.didiwin = False
         self.isgameover = False
+
+
 
     #######################################
     ### Network event/message callbacks ###

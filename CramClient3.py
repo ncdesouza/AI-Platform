@@ -3,6 +3,7 @@ from time import sleep
 from sys import stdin, exit
 import pygame
 import math
+import thread
 
 from PodSixNet.Connection import connection, ConnectionListener
 
@@ -30,21 +31,7 @@ class CramClient(ConnectionListener):
         connection.Send({"action": "teamname", "teamname": self.teamname, "ingame": False})
         print "Connecting to Crunch-Platform..."
 
-        """
-        " Initialize game settings
-        """
-        self.justplaced = 10
-        self.board = [[False for x in range(5)] for y in range(5)]
-        self.owner = [[None for x in range(5)] for y in range(5)]
-        self.turn = False
-        self.playerID = None
-        self.gameID = None
-
-        self.me = 0
-        self.opponent = 0
-        self.didiwin = False
-        self.isgameover = False
-
+        self.timer = 90
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
 
@@ -56,9 +43,8 @@ class CramClient(ConnectionListener):
         pygame.font.init()
         width, height = 600, 500
         self.screen = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Cram Game - Hosted by Crunch-Platform")
+        pygame.display.set_caption("Cram Game - " + self.teamname)
 
-        self.playagain = False
         self.endsession = False
         self.mainMenu()
 
@@ -67,7 +53,22 @@ class CramClient(ConnectionListener):
     #################################
 
     def mainMenu(self):
-        self.teams = None
+        """
+        " Initialize game settings
+        """
+        self.board = [[False for x in range(5)] for y in range(5)]
+        self.owner = [[None for x in range(5)] for y in range(5)]
+        self.turn = False
+        self.playerID = None
+        self.gameID = None
+
+        self.me = 0
+        self.opponent = 0
+        self.didiwin = False
+        self.isgameover = False
+        self.ismoveready = False
+
+        self.playagain = False
         self.selected = False
         self.playerselect = False
         self.tBegin = False
@@ -276,11 +277,15 @@ class CramClient(ConnectionListener):
         scoreother = myfont64.render(str(self.opponent), 1, (255, 255, 255))
         scoretextme = myfont20.render("You", 1, (255, 255, 255))
         scoretextother = myfont20.render("Other Player", 1, (255, 255, 255))
+        countdown = myfont64.render(str(self.timer), 1, (255, 255, 255))
+        counttext = myfont20.render("Timer:", 1, (255, 255, 255))
 
         self.screen.blit(scoretextme, (10, 370))
         self.screen.blit(scoreme, (10, 380))
         self.screen.blit(scoretextother, (240, 370))
         self.screen.blit(scoreother, (270, 380))
+        self.screen.blit(counttext, (10, 425))
+        self.screen.blit(countdown, (50, 425))
 
         self.screen.blit(self.leaderboard, (389, 0))
 
@@ -293,7 +298,6 @@ class CramClient(ConnectionListener):
         """
         " Main game loop
         """
-        self.justplaced -= 1
         connection.Pump()
         self.Pump()
 
@@ -308,15 +312,10 @@ class CramClient(ConnectionListener):
                 exit()
 
         if self.turn:
+            if not self.ismoveready:
+                self.ismoveready = True
+                thread.start_new_thread(self.makeMove, ())
 
-            y1, x1, y2, x2 = self.makeMove()
-
-            if self.justplaced <= 0:
-                self.justplaced = 10
-                connection.Send(
-                    {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
-                     "playerID": self.playerID, "turn": self.turn,
-                     "gameID": self.gameID})
         pygame.display.flip()
 
         if self.isgameover:
@@ -326,37 +325,15 @@ class CramClient(ConnectionListener):
             return 1
 
     def makeMove(self):
-        # x1 = random.randint(0, 4)
-        # y1 = random.randint(0, 4)
-        #
-        # # x or y attached block
-        # xory = random.randint(0, 1)
-        # # negative or positive attached block
-        # norp = random.randint(0, 1)
-        # # ensures the values are within the array
-        # if norp == 0 and [[x1 if xory == 1 else y1] != 0]:
-        #     c = -1
-        # elif norp == 1 and [[x1 if xory == 1 else y1] != 4]:
-        #     c = 1
-        # if xory == 0:
-        #     x2 = x1 + c
-        #     if x2 < 0 or x2 > 4:
-        #         x2 = x1 + (-c)
-        #     y2 = y1
-        # else:
-        #     y2 = y1 + c
-        #     if y2 < 0 or y2 > 4:
-        #         y2 = y1 + (-c)
-        #     x2 = x1
-
-
         result = self.pyva.Move()
         y1 = result[0]
         x1 = result[1]
         y2 = result[2]
         x2 = result[3]
-
-        return (y1, x1, y2, x2)
+        connection.Send(
+            {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+             "playerID": self.playerID, "turn": self.turn,
+             "gameID": self.gameID})
 
     def gameOver(self):
         self.screen.blit(
@@ -368,7 +345,6 @@ class CramClient(ConnectionListener):
                     exit()
                 elif pygame.mouse.get_pressed()[0]:
                     self.playagain = True
-                    sleep(2)
                     connection.Send({"action": "restart", "playerID": self.playerID, "gameID": self.gameID})
                     self.reset()
                     break
@@ -377,7 +353,6 @@ class CramClient(ConnectionListener):
             pygame.display.flip()
 
     def reset(self):
-        self.justplaced = 10
         self.board = [[False for x in range(5)] for y in range(5)]
         self.owner = [[None for x in range(5)] for y in range(5)]
         self.turn = False
@@ -388,6 +363,8 @@ class CramClient(ConnectionListener):
         self.opponent = 0
         self.didiwin = False
         self.isgameover = False
+
+
 
     #######################################
     ### Network event/message callbacks ###
@@ -446,6 +423,7 @@ class CramClient(ConnectionListener):
               + str(self.gameID)
 
     def Network_validmove(self, data):
+        self.ismoveready = False
         x1 = data['x1']
         y1 = data['y1']
         x2 = data['x2']
@@ -453,6 +431,8 @@ class CramClient(ConnectionListener):
         playerID = data['playerID']
         if playerID != 2:
             self.turn = data['turn']
+            self.opponent = data["opscore"]
+            self.me = data["mscore"]
         self.board[y1][x1] = True
         self.board[y2][x2] = True
         self.owner[y1][x1] = playerID
@@ -464,13 +444,21 @@ class CramClient(ConnectionListener):
         sleep(2)
 
     def Network_invalidmove(self, data):
+        self.ismoveready = False
         print "invalid move"
 
     def Network_gameover(self, data):
+        self.me = data["mscore"]
+        self.opponent = data["opscore"]
+        if self.me > self.opponent:
+            self.didiwin = True
         self.isgameover = True
 
-    def Network_yourturn(self, data):
-        self.turn = data['torf']
+    def Network_timer(self, data):
+        self.timer = data['time']
+
+    def Network_timesup(self, data):
+        self.turn = data['turn']
 
 
     #####################################
