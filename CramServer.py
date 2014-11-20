@@ -180,7 +180,7 @@ class CramServer(Server):
             if len(self.tournamentQ) == 4:
                 team = [p for p in self.players if p.teamname == teamname]
                 if len(team) == 1:
-                    team[0].Send({"action": "tornydone"}) # add rank
+                    team[0].Send({"action": "tornydone"})  # add rank
                     self.tournamentMode = False
         elif roUnd == 1:
             self.tournamentQ.append(teamname)
@@ -209,7 +209,7 @@ class CramServer(Server):
 
 
     # def updateTStats(self, teamname, WorL, score, count):
-    #     self.tournamentStat[teamname] = count
+    # self.tournamentStat[teamname] = count
 
 
     def restart(self, gameID, playerID):
@@ -377,6 +377,7 @@ class Game:
             self.p1.Send({"action": "invalidmove"})
         else:
             self.p0.Send({"action": "invalidmove"})
+
 
 print "Starting Crunch-Platform..."
 cramServer = CramServer(localaddr=("localhost", 27000))
