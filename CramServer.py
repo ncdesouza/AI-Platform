@@ -1,4 +1,4 @@
-import collections
+from collections import defaultdict
 import random
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -165,7 +165,7 @@ class CramServer(Server):
             team = [p for p in self.players if p.teamname == teamname]
             if len(team) == 1:
                 team[0].Send({"action": "enter"})
-                # thread.start_new_thread(self.updateTStats, (teamname, WorL, score, self.count)) Add tournament scores
+                # thread.start_new_thread(self.updateTStats, (teamname, WorL, score, roUnd))
             if len(self.tournamentQ) == 4:
                 self.tournamentQ = sorted(self.tournamentQ)
                 p0, p1 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
@@ -176,7 +176,6 @@ class CramServer(Server):
                 print "Player 1 Vs. Player 2"
                 print "Player 3 Vs. Player 4"
         elif roUnd == 3:
-
             if len(self.tournamentQ) == 4:
                 team = [p for p in self.players if p.teamname == teamname]
                 if len(team) == 1:
@@ -185,7 +184,6 @@ class CramServer(Server):
         elif roUnd == 1:
             self.tournamentQ.append(teamname)
             if len(self.tournamentQ) == 4:
-                sleep(5)
                 self.tournamentQ = sorted(self.tournamentQ)
                 p0, p1 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
                 p2, p3 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
@@ -207,10 +205,33 @@ class CramServer(Server):
                 print "Player 1 Vs. Player 3"
                 print "Player 4 Vs. Player 2"
 
-
-    # def updateTStats(self, teamname, WorL, score, count):
-    # self.tournamentStat[teamname] = count
-
+    # def matchMaker(self):
+    #     home = []
+    #     away = []
+    #
+    #     matchQ = sorted(self.tournamentQ)
+    #
+    #     n = len(matchQ)
+    #     if (n % 2)
+    #     nGames = n/2
+    #     for i in range(0, n):
+    #         if i <= nGames:
+    #             home.append(matchQ.pop(0))
+    #         elif i
+    #
+    #
+    # def updateTStats(self, teamname, WorL, score, roUnd):
+    #     if roUnd == 0:
+    #         self.tournamentStat[teamname] = None
+    #     elif roUnd == 1:
+    #         self.tournamentStat[teamname] = (roUnd, WorL, score)
+    #     else:
+    #         self.tournamentStat[teamname].append(roUnd, WorL, score)
+    #     teams = [p for p in self.players if p.teamname in self.tournamentStat]
+    #
+    #
+    #     for team in teams:
+    #         team.Send()
 
     def restart(self, gameID, playerID):
         game = [a for a in self.games if a.gameID == gameID]

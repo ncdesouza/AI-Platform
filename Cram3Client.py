@@ -13,6 +13,7 @@ class CramClient(ConnectionListener):
         """
         " Setup Java Python connection
         """
+        self.leaders = []
         self.gateway = JavaGateway(auto_convert=True)
         self.pyva = self.gateway.entry_point.player3()
 
@@ -28,7 +29,9 @@ class CramClient(ConnectionListener):
         "   *        to keep gui clean          *
         """
         self.teamname = self.pyva.getTeamname()
-        connection.Send({"action": "teamname", "teamname": self.teamname, "ingame": False})
+        connection.Send({"action": "teamname",
+                         "teamname": self.teamname,
+                         "ingame": False})
         print "Connecting to Crunch-Platform..."
 
         self.timer = 90
@@ -291,14 +294,26 @@ class CramClient(ConnectionListener):
         self.screen.blit(counttext, (10, 425))
         self.screen.blit(countdown, (50, 425))
 
+
+    def drawLeaders(self):
         self.screen.blit(self.leaderboard, (389, 0))
+        myfont64 = pygame.font.SysFont(None, 64)
+        myfont20 = pygame.font.SysFont(None, 20)
+
+        if len(self.leaders) != 0:
+            for y in range(len(self.leaders)):
+                name = myfont64.render(self.leaders[y][0], 1, (255, 255, 255))
+                label = myfont20.render("Score:", 1, (255, 255, 255))
+                scr = myfont64.render(self.leaders[y][1], 1, (255, 255, 255))
+
+                self.screen.blit(name, 395, y * 64 + 20)
+                self.screen.blit(label, 395, y + 64 + 5 + 20)
+                self. screen.blit(str(scr), 395, y + 63 + 5 + 20)
 
     def update(self):
-
         if self.playagain:
             self.mainMenu()
             self.playagain = False
-
         """
         " Main game loop
         """
@@ -352,7 +367,9 @@ class CramClient(ConnectionListener):
                         exit()
                     elif pygame.mouse.get_pressed()[0]:
                         self.playagain = True
-                        connection.Send({"action": "restart", "playerID": self.playerID, "gameID": self.gameID})
+                        connection.Send({"action": "restart",
+                                         "playerID": self.playerID,
+                                         "gameID": self.gameID})
                         self.reset()
                         break
                 if self.playagain:
@@ -361,13 +378,17 @@ class CramClient(ConnectionListener):
         else:
             self.roUnd += 1
             rouNd, didw, score = self.roUnd, self.didiwin, self.me
-            connection.Send({"action": "restart", "playerID": self.playerID, "gameID": self.gameID})
+            connection.Send({"action": "restart",
+                             "playerID": self.playerID,
+                             "gameID": self.gameID})
             self.reset()
             sleep(7)
-            connection.Send({"action": "tournament", "teamname": self.teamname,
-                             "round": self.roUnd, "WorL": self.didiwin, "score": self.me})
+            connection.Send({"action": "tournament",
+                             "teamname": self.teamname,
+                             "round": self.roUnd,
+                             "WorL": self.didiwin,
+                             "score": self.me})
 
-            pygame.display.flip()
 
     def reset(self):
         """
@@ -376,7 +397,7 @@ class CramClient(ConnectionListener):
         self.board = [[False for x in range(5)] for y in range(5)]
         self.owner = [[None for x in range(5)] for y in range(5)]
         self.turn = False
-        self.playerID = None
+        self.playerID = 0
         self.gameID = None
 
         self.me = 0
@@ -398,6 +419,7 @@ class CramClient(ConnectionListener):
         else:
             self.selected = True
             self.playerselect = True
+            self.begingame = False
             self.tBegin = False
             self.tWaiting()
             self.timer = 10
@@ -434,8 +456,15 @@ class CramClient(ConnectionListener):
         self.tWaiting()
 
     def Network_tournydone(self, data):
-
+        self.tournamentMode = False
+        connection.Send({"action": "restart",
+                         "playerID": self.playerID,
+                         "gameID": self.gameID})
         self.reset()
+
+    def Network_tstats(self, data):
+        self.leaders = data['leaders']
+
     ######################################
     ###  Cram game specific callbacks  ###
     ######################################
