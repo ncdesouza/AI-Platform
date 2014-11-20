@@ -1,3 +1,4 @@
+import collections
 import random
 from time import sleep
 from weakref import WeakKeyDictionary
@@ -49,7 +50,14 @@ class ClientChannel(Channel):
 
     def Network_tournament(self, data):
         teamname = data['teamname']
-        self._server.tournament(teamname)
+        roUnd = data['round']
+        if roUnd == 0:
+            WorL = None
+            score = 0
+        else:
+            WorL = data["WorL"]
+            score = data['score']
+        self._server.tournament(teamname, roUnd, WorL, score)
 
     def Network_restart(self, data):
         gameID = data['gameID']
@@ -85,7 +93,11 @@ class CramServer(Server):
         self.finished = []
         self.curindex = -1
 
+        self.tGames = [None, None]
         self.tournamentQ = []
+        self.count = -1
+        self.tournamentMode = False
+        self.tournamentStat = dict()
 
         print 'Server Launched'
 
@@ -145,20 +157,60 @@ class CramServer(Server):
                             "gameID": self.curindex})
         self.queue = None
 
-    def tournament(self, teamname):
-        team = [p for p in self.players if p.teamname == teamname]
-        finished = [False, False]
-        if len(team) == 1:
-            self.tournamentQ.append(team[0])
-            self.tournamentQ[len(team) - 1].Send({"action": "enter"})
+    def tournament(self, teamname, roUnd, WorL, score):
+        if roUnd == 0:
+            self.count += 1
+            self.tournamentMode = True
+            self.tournamentQ.append(teamname)
+            team = [p for p in self.players if p.teamname == teamname]
+            if len(team) == 1:
+                team[0].Send({"action": "enter"})
+                # thread.start_new_thread(self.updateTStats, (teamname, WorL, score, self.count)) Add tournament scores
             if len(self.tournamentQ) == 4:
-                for rounds in range(2):
-                    game1 = thread.start_new_thread(self.newGame, (self.tournamentQ[0], self.tournamentQ[1]))
-                    game2 = thread.start_new_thread(self.newGame, (self.tournamentQ[2], self.tournamentQ[3]))
+                self.tournamentQ = sorted(self.tournamentQ)
+                p0, p1 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
+                p2, p3 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
+                self.newGame(p0, p1)
+                self.newGame(p3, p2)
+                print "Game 1:"
+                print "Player 1 Vs. Player 2"
+                print "Player 3 Vs. Player 4"
+        elif roUnd == 3:
+
+            if len(self.tournamentQ) == 4:
+                team = [p for p in self.players if p.teamname == teamname]
+                if len(team) == 1:
+                    team[0].Send({"action": "tornydone"}) # add rank
+                    self.tournamentMode = False
+        elif roUnd == 1:
+            self.tournamentQ.append(teamname)
+            if len(self.tournamentQ) == 4:
+                sleep(5)
+                self.tournamentQ = sorted(self.tournamentQ)
+                p0, p1 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
+                p2, p3 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
+                self.newGame(p0, p3)
+                self.newGame(p2, p1)
+                print "Game 2:"
+                print "Player 1 Vs. Player 3"
+                print "Player 4 Vs. Player 2"
+        else:
+            self.tournamentQ.append(teamname)
+            if len(self.tournamentQ) == 4:
+                sleep(5)
+                self.tournamentQ = sorted(self.tournamentQ)
+                p0, p1 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
+                p2, p3 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
+                self.newGame(p0, p2)
+                self.newGame(p1, p3)
+                print "Game 3:"
+                print "Player 1 Vs. Player 3"
+                print "Player 4 Vs. Player 2"
 
 
+    # def updateTStats(self, teamname, WorL, score, count):
+    #     self.tournamentStat[teamname] = count
 
-            print self.tournamentQ[len(team) - 1].teamname
 
     def restart(self, gameID, playerID):
         game = [a for a in self.games if a.gameID == gameID]
@@ -190,8 +242,10 @@ class CramServer(Server):
                                 else:
                                     game.p1score = 25 - game.p0score
                                 game.p1.Send({"action": "gameover", "torf": True,
+                                              "tourn": True if self.tournamentMode else False,
                                               "mscore": game.p1score, "opscore": game.p0score})
                                 game.p0.Send({"action": "gameover", "torf": True,
+                                              "tourn": True if self.tournamentMode else False,
                                               "mscore": game.p0score, "opscore": game.p1score})
                                 break
                             if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:

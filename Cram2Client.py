@@ -14,7 +14,7 @@ class CramClient(ConnectionListener):
         " Setup Java Python connection
         """
         self.gateway = JavaGateway(auto_convert=True)
-        self.pyva = self.gateway.entry_point.player0()
+        self.pyva = self.gateway.entry_point.player2()
 
         """
         " Connect to Server
@@ -367,6 +367,7 @@ class CramClient(ConnectionListener):
             connection.Send({"action": "tournament", "teamname": self.teamname,
                              "round": self.roUnd, "WorL": self.didiwin, "score": self.me})
 
+            pygame.display.flip()
 
     def reset(self):
         """
@@ -375,7 +376,7 @@ class CramClient(ConnectionListener):
         self.board = [[False for x in range(5)] for y in range(5)]
         self.owner = [[None for x in range(5)] for y in range(5)]
         self.turn = False
-        self.playerID = 0
+        self.playerID = None
         self.gameID = None
 
         self.me = 0
@@ -433,9 +434,8 @@ class CramClient(ConnectionListener):
         self.tWaiting()
 
     def Network_tournydone(self, data):
-        self.tournamentMode = False
-        self.reset()
 
+        self.reset()
     ######################################
     ###  Cram game specific callbacks  ###
     ######################################
