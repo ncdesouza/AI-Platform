@@ -41,7 +41,7 @@ class CramClient(ConnectionListener):
         """
         " Initializing the console
         """
-        self.initraphics()
+        self.initGraphics()
         pygame.init()
         pygame.font.init()
         width, height = 600, 500
@@ -149,12 +149,12 @@ class CramClient(ConnectionListener):
 
 
     def drawSelectScreen(self):
-        self.screen.blit(self.home, (0, 0))
+        # self.screen.blit(self.home, (0, 0))
         self.screen.blit(self.gameroom, (0, 0))
-        # self.screen.blit(self.leaderboard, (389, 0))
-        # #self.screen.blit(self.botimg, (100, 100))
-        # self.screen.blit(self.greenplayer, (200, 100))
-        # self.screen.blit(self.tournament, (125, 160))
+        self.screen.blit(self.leaderboard, (389, 0))
+        #self.screen.blit(self.botimg, (100, 100))
+        self.screen.blit(self.greenplayer, (200, 100))
+        self.screen.blit(self.tournament, (125, 160))
 
     def selectPlayer(self):
         connection.Pump()
@@ -540,8 +540,8 @@ class CramClient(ConnectionListener):
         """
         " Start menu graphics
         """
-        self.home = pygame.image.load("./images/home.png")
-        # self.gameroom = pygame.image.load("./images/GameRoom.png")
+        #self.home = pygame.image.load("./images/home.png")
+        self.gameroom = pygame.image.load("./images/GameRoom.png")
         self.greenplayer = pygame.image.load("./images/greenplayer.png")
         self.blueplayer = pygame.image.load("./images/blueplayer.png")
         self.inactiveplayer = pygame.image.load("./images/inactiveplayer.png")
