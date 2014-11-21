@@ -2,11 +2,11 @@ from collections import defaultdict
 import random
 from time import sleep
 from weakref import WeakKeyDictionary
-from pygame.locals import *
 from PodSixNet.Server import Server
 from PodSixNet.Channel import Channel
 import pygame
 import thread
+import heapq
 
 
 class ClientChannel(Channel):
@@ -27,10 +27,12 @@ class ClientChannel(Channel):
     ##################################
 
     def Network_teamname(self, data):
+        version = data['version']
         self.teamname = data['teamname']
         self.ingame = data['ingame']
         print "new team: " + self.teamname
-        # self._server.updatePList(data)
+        self._server.version(self.teamname, version)
+
 
     def Network_getPlayers(self, data):
         team = data['teamname']
@@ -64,7 +66,6 @@ class ClientChannel(Channel):
         playerID = data['playerID']
         self._server.restart(gameID, playerID)
 
-
     ##################################
     ###    Cram game callbacks     ###
     ##################################
@@ -85,6 +86,7 @@ class CramServer(Server):
 
     def __init__(self, *args, **kwargs):
         Server.__init__(self, *args, **kwargs)
+        self.curversion = 1
         self.players = WeakKeyDictionary()
         self.numTeams = 0
 
@@ -111,6 +113,12 @@ class CramServer(Server):
         print "New Player" + str(player.addr)
         self.numTeams += 1
         self.players[player] = True
+
+    def version(self, teamname, version):
+        if version != self.curversion:
+            team = [t for t in self.players if t.teamname == teamname]
+            if len(team) == 1:
+                team[0].Send({"action": "upgrade"})
 
     def playerInGame(self, player1, player0):
         player = [p for p in self.players if p.teamname == player1]
@@ -162,10 +170,10 @@ class CramServer(Server):
             self.count += 1
             self.tournamentMode = True
             self.tournamentQ.append(teamname)
+            thread.start_new_thread(self.updateTStats, (teamname, WorL, score, roUnd))
             team = [p for p in self.players if p.teamname == teamname]
             if len(team) == 1:
                 team[0].Send({"action": "enter"})
-                # thread.start_new_thread(self.updateTStats, (teamname, WorL, score, roUnd))
             if len(self.tournamentQ) == 4:
                 self.tournamentQ = sorted(self.tournamentQ)
                 p0, p1 = self.tournamentQ.pop(0), self.tournamentQ.pop(0)
@@ -205,33 +213,33 @@ class CramServer(Server):
                 print "Player 1 Vs. Player 3"
                 print "Player 4 Vs. Player 2"
 
-    # def matchMaker(self):
+    # def matchMaker(self, roUnd):
     #     home = []
     #     away = []
-    #
     #     matchQ = sorted(self.tournamentQ)
     #
     #     n = len(matchQ)
-    #     if (n % 2)
-    #     nGames = n/2
-    #     for i in range(0, n):
-    #         if i <= nGames:
+    #     if (n % 2 == 0):
+    #         nGames = n/2
+    #         for i in range(0, n):
+    #             away.append((matchQ))
     #             home.append(matchQ.pop(0))
-    #         elif i
     #
-    #
-    # def updateTStats(self, teamname, WorL, score, roUnd):
-    #     if roUnd == 0:
-    #         self.tournamentStat[teamname] = None
-    #     elif roUnd == 1:
-    #         self.tournamentStat[teamname] = (roUnd, WorL, score)
-    #     else:
-    #         self.tournamentStat[teamname].append(roUnd, WorL, score)
-    #     teams = [p for p in self.players if p.teamname in self.tournamentStat]
-    #
-    #
-    #     for team in teams:
-    #         team.Send()
+    #             if i <= nGames:
+    #                 if i != 0 and i <= roUnd:
+    #                     for r in range(0, roUnd):
+    #                         home.append(matchQ.pop(nGames - i - r))
+    #                         # Still working
+
+    def updateTStats(self, teamname, WorL, score, roUnd):
+        if roUnd == 0:
+            self.tournamentStat[teamname] = 0
+        else:
+            self.tournamentStat[teamname] += score
+        topPlayers = heapq.nlargest(4, self.tournamentStat, key=self.tournamentStat.get)
+        teams = [t for t in self.players if teamname in self.tournamentStat]
+        for team in teams:
+            team.Send({"action": "tstats", "leaders": topPlayers})
 
     def restart(self, gameID, playerID):
         game = [a for a in self.games if a.gameID == gameID]
