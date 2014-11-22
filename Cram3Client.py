@@ -13,6 +13,7 @@ class CramClient(ConnectionListener):
         """
         " Setup Java Python connection
         """
+        self.version = 1
         self.leaders = []
         self.gateway = JavaGateway(auto_convert=True)
         self.pyva = self.gateway.entry_point.player3()
@@ -31,7 +32,8 @@ class CramClient(ConnectionListener):
         self.teamname = self.pyva.getTeamname()
         connection.Send({"action": "teamname",
                          "teamname": self.teamname,
-                         "ingame": False})
+                         "ingame": False,
+                         "version": self.version})
         print "Connecting to Crunch-Platform..."
 
         self.timer = 90
@@ -149,9 +151,10 @@ class CramClient(ConnectionListener):
 
 
     def drawSelectScreen(self):
+        # self.screen.blit(self.home, (0, 0))
         self.screen.blit(self.gameroom, (0, 0))
         self.screen.blit(self.leaderboard, (389, 0))
-        self.screen.blit(self.botimg, (100, 100))
+        #self.screen.blit(self.botimg, (100, 100))
         self.screen.blit(self.greenplayer, (200, 100))
         self.screen.blit(self.tournament, (125, 160))
 
@@ -226,6 +229,15 @@ class CramClient(ConnectionListener):
 
                 i += 1
 
+    def drawUpgrade(self):
+        self.screen.fill(0)
+        self.screen.blit(self.gameroom, (0, 0))
+        myfont = pygame.font.SysFont(None, 32)
+        msg = myfont.render("Please upgrade your version", 1, (255, 255, 255))
+
+        self.screen.blit(msg, (135, 250))
+
+
     #################################
     ###     tournament Mode       ###
     #################################
@@ -294,7 +306,6 @@ class CramClient(ConnectionListener):
         self.screen.blit(counttext, (10, 425))
         self.screen.blit(countdown, (50, 425))
 
-
     def drawLeaders(self):
         self.screen.blit(self.leaderboard, (389, 0))
         myfont64 = pygame.font.SysFont(None, 64)
@@ -304,11 +315,11 @@ class CramClient(ConnectionListener):
             for y in range(len(self.leaders)):
                 name = myfont64.render(self.leaders[y][0], 1, (255, 255, 255))
                 label = myfont20.render("Score:", 1, (255, 255, 255))
-                scr = myfont64.render(self.leaders[y][1], 1, (255, 255, 255))
+                scr = myfont64.render(str(self.leaders[y][1]), 1, (255, 255, 255))
+                self.screen.blit(name, [415, y * 64 + 25])
+                self.screen.blit(label, [415 + 64, y * 64 + 5 + 20])
+                self. screen.blit(scr, [500, y * 63 + 5 + 20])
 
-                self.screen.blit(name, 395, y * 64 + 20)
-                self.screen.blit(label, 395, y + 64 + 5 + 20)
-                self. screen.blit(str(scr), 395, y + 63 + 5 + 20)
 
     def update(self):
         if self.playagain:
@@ -323,6 +334,7 @@ class CramClient(ConnectionListener):
         self.screen.fill(0)
         self.drawBoard()
         self.drawHUD()
+        self.drawLeaders()
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -440,6 +452,12 @@ class CramClient(ConnectionListener):
         print "Disconnected from Cram-Platform"
         exit()
 
+    def Network_upgrade(self, data):
+        self.drawUpgrade()
+        pygame.display.flip()
+        sleep(10)
+        connection.Close()
+
     ######################################
     ### Room event/messages callbacks  ###
     ######################################
@@ -463,7 +481,7 @@ class CramClient(ConnectionListener):
         self.reset()
 
     def Network_tstats(self, data):
-        self.leaders = data['leaders']
+        self.leaders = data["leaders"]
 
     ######################################
     ###  Cram game specific callbacks  ###
@@ -539,6 +557,7 @@ class CramClient(ConnectionListener):
         """
         " Start menu graphics
         """
+        #self.home = pygame.image.load("./images/home.png")
         self.gameroom = pygame.image.load("./images/GameRoom.png")
         self.greenplayer = pygame.image.load("./images/greenplayer.png")
         self.blueplayer = pygame.image.load("./images/blueplayer.png")
