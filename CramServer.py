@@ -259,7 +259,12 @@ class CramServer(Server):
     def tick(self):
         for game in self.games:
             if not game.gameOver:
-                thread.start_new_thread(self.timer, ())
+
+                try:
+                    thread.start_new_thread(self.timer, ())
+                except:
+                    print "Time threading error"
+
                 temp = True
                 for x in range(0, 5):
                     for y in range(0, 5):
@@ -371,6 +376,7 @@ class Game:
                         self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
                                       "playerID": playerID, "turn": True if self.turn == 0 else False,
                                       "mscore": self.p0score, "opscore": self.p1score})
+                        print x1, y1, x2, y2, playerID
                         # place block in game
                         self.board[y1][x1] = True
                         self.board[y2][x2] = True
@@ -387,6 +393,7 @@ class Game:
                         self.p0.Send({"action": "validmove", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
                                       "playerID": playerID, "turn": True if self.turn == 0 else False,
                                       "mscore": self.p0score, "opscore": self.p1score})
+                        print x1, y1, x2, y2, playerID
                         # place block in game
                         self.board[y1][x1] = True
                         self.board[y2][x2] = True

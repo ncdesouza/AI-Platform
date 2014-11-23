@@ -1,21 +1,21 @@
 import py4j.GatewayServer;
 
 public class Py1va {
-  private PlayerMove pyva0;
-  private Player1Move pyva1;
+  private Player2 pyva0;
+  private Player1 pyva1;
   private Player2Move pyva2;
   private Player3Move pyva3;
   public Py1va() {
-         pyva0 = new PlayerMove();
-         pyva1 = new Player1Move();
+         pyva0 = new Player2();
+         pyva1 = new Player1();
          pyva2 = new Player2Move();
          pyva3 = new Player3Move();
        }
-  public PlayerMove player0() {
+  public Player2 player0() {
          return pyva0;
   }
 
-  public Player1Move player1() {
+  public Player1 player1() {
          return pyva1;
   }
 
