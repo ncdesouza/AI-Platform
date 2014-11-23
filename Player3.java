@@ -4,7 +4,7 @@ import java.util.List;
 import java.io.IOException;
 import java.lang.String.*;
 
-public class PlayerMove {
+public class Player3 {
 
 	public static String teamname;
 	public static char boardMatrix[][] = new char[5][5];
@@ -15,10 +15,10 @@ public class PlayerMove {
 	/**
 	 * Constructor
 	 */
-	public PlayerMove() {
+	public Player3() {
 
 		// Set your team name here:
-		teamname = "anon";
+		teamname = "Nick";
 
 		// Construct the BoardMatrix and 
 		// StringAsBoard as free spaces

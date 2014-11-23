@@ -1,4 +1,4 @@
-from app import db
+from backup.tournament.app.app import db
 
 class Team(db.Model):
     id = db.Column(db.Integer, index=True, primary_key=True)

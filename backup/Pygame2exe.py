@@ -50,7 +50,7 @@ class pygame2exe(
 class BuildExe:
     def __init__(self):
         #Name of starting .py
-        self.script = "CramClient.py"
+        self.script = "CramClient1.py"
 
         #Name of program
         self.project_name = "CramClient"

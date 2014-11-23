@@ -16,7 +16,7 @@ class CramClient(ConnectionListener):
         self.version = 1
         self.leaders = []
         self.gateway = JavaGateway(auto_convert=True)
-        self.pyva = self.gateway.entry_point.player0()
+        self.pyva = self.gateway.entry_point.player1()
 
         """
         " Connect to Server
@@ -36,7 +36,7 @@ class CramClient(ConnectionListener):
                          "version": self.version})
         print "Connecting to Crunch-Platform..."
 
-        self.timer = 90
+        self.timer = 0
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
 
@@ -370,7 +370,7 @@ class CramClient(ConnectionListener):
         self.screen.blit(
             self.gameover if not self.didiwin else self.winningscreen, (0, 0))
         pygame.display.flip()
-        sleep(7)
+
         if not self.tournamentMode:
             self.screen.blit(self.playagainimg, (150, 400))
             while 1:
@@ -394,7 +394,7 @@ class CramClient(ConnectionListener):
                              "playerID": self.playerID,
                              "gameID": self.gameID})
             self.reset()
-            sleep(7)
+
             connection.Send({"action": "tournament",
                              "teamname": self.teamname,
                              "round": self.roUnd,
@@ -434,7 +434,6 @@ class CramClient(ConnectionListener):
             self.begingame = False
             self.tBegin = False
             self.tWaiting()
-            self.timer = 10
 
 
     #######################################
@@ -586,7 +585,7 @@ class CramClient(ConnectionListener):
         self.masterblock = pygame.image.load("./images/masterblock.png")
 
 
-cramClient = CramClient("localhost", 27000)
+cramClient = CramClient("192.168.2.146", 27000)
 while 1:
     if cramClient.update() == 1:
         break

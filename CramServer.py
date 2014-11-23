@@ -59,6 +59,7 @@ class ClientChannel(Channel):
         else:
             WorL = data["WorL"]
             score = data['score']
+        self._server.playerInGme(teamname)
         self._server.tournament(teamname, roUnd, WorL, score)
 
     def Network_restart(self, data):
@@ -119,6 +120,11 @@ class CramServer(Server):
             team = [t for t in self.players if t.teamname == teamname]
             if len(team) == 1:
                 team[0].Send({"action": "upgrade"})
+
+    def playerInGme(self, player):
+        player = [p for p in self.players if p.teamname == player]
+        if len(player) == 1:
+            player[0].ingame = True
 
     def playerInGame(self, player1, player0):
         player = [p for p in self.players if p.teamname == player1]
@@ -275,12 +281,18 @@ class CramServer(Server):
                                     game.p0score = 25 - game.p1score
                                 else:
                                     game.p1score = 25 - game.p0score
-                                game.p1.Send({"action": "gameover", "torf": True,
-                                              "tourn": True if self.tournamentMode else False,
-                                              "mscore": game.p1score, "opscore": game.p0score})
-                                game.p0.Send({"action": "gameover", "torf": True,
-                                              "tourn": True if self.tournamentMode else False,
-                                              "mscore": game.p0score, "opscore": game.p1score})
+                                try:
+                                    game.p1.Send({"action": "gameover", "torf": True,
+                                                  "tourn": True if self.tournamentMode else False,
+                                                  "mscore": game.p1score, "opscore": game.p0score})
+                                except:
+                                    print "Player 1 cannot be found"
+                                try:
+                                    game.p0.Send({"action": "gameover", "torf": True,
+                                                  "tourn": True if self.tournamentMode else False,
+                                                  "mscore": game.p0score, "opscore": game.p1score})
+                                except:
+                                    print "player 2 cannot be found"
                                 break
                             if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:
                                 temp = False
@@ -304,12 +316,24 @@ class CramServer(Server):
         for game in self.games:
             if not game.gameOver:
                 timer = 90 - ((pygame.time.get_ticks() - game.time) // 1000)
-                game.p0.Send({"action": "timer", "time": timer})
-                game.p1.Send({"action": "timer", "time": timer})
+                try:
+                    game.p0.Send({"action": "timer", "time": timer})
+                    game.p1.Send({"action": "timer", "time": timer})
+                except:
+                    print "Timer Error"
+                else:
+                    del game
+                    break
                 if timer <= 0:
                     game.turn = 0 if game.turn == 1 else 1
-                    game.p1.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
-                    game.p0.Send({"action": "timesup", "turn": True if game.turn == 0 else False})
+                    try:
+                        game.p1.Send({"action": "timesup", "turn": True if game.turn == 1 else False})
+                        game.p0.Send({"action": "timesup", "turn": True if game.turn == 0 else False})
+                    except:
+                        print("Wowzers")
+                    else:
+                        del game
+                        break
                     game.time = pygame.time.get_ticks()
 
 
@@ -399,14 +423,16 @@ class Game:
                         self.board[y2][x2] = True
                         self.owner[y1][x1] = playerID
                         self.owner[y2][x2] = playerID
-                        sleep(2)
                         self.time = pygame.time.get_ticks()
                     else:
                         self.invalidMove(playerID, data)
+                        print x1, y1, x2, y2
                 else:
                     self.invalidMove(playerID, data)
+                    print x1, y1, x2, y2
             else:
                 self.invalidMove(playerID, data)
+                print x1, y1, x2, y2
 
     def invalidMove(self, playerID, data):
         if self.turn == 1:
