@@ -33,7 +33,6 @@ class ClientChannel(Channel):
         print "new team: " + self.teamname
         self._server.version(self.teamname, version)
 
-
     def Network_getPlayers(self, data):
         team = data['teamname']
         try:
@@ -72,10 +71,10 @@ class ClientChannel(Channel):
     ##################################
 
     def Network_place(self, data):
-        x1 = data['x1']
-        y1 = data['y1']
-        x2 = data['x2']
-        y2 = data['y2']
+        x1 = data['y1']
+        y1 = data['x1']
+        x2 = data['y2']
+        y2 = data['x2']
         playerID = data['playerID']
         turn = data['turn']
         gameID = data['gameID']
@@ -119,7 +118,7 @@ class CramServer(Server):
         if version != self.curversion:
             team = [t for t in self.players if t.teamname == teamname]
             if len(team) == 1:
-                team[0].Send({"action": "upgrade"})
+                team[0].Send({"action": "upgrade", "msg": "Please git pull to update your client"})
 
     def playerInGme(self, player):
         player = [p for p in self.players if p.teamname == player]
@@ -155,6 +154,9 @@ class CramServer(Server):
     ###       Cram game flow       ###
     ##################################
 
+    def endGame(self):  # needs to be implemented
+        pass
+
     def newGame(self, player0, player1):
         self.curindex += 1
         p1 = [p for p in self.players if p.teamname == player0]
@@ -171,6 +173,7 @@ class CramServer(Server):
                             "gameID": self.curindex})
         self.queue = None
 
+    # <<<<<--------Needs to be dubuged----------<<<<<<<<<<
     def tournament(self, teamname, roUnd, WorL, score):
         if roUnd == 0:
             self.count += 1
@@ -220,7 +223,7 @@ class CramServer(Server):
                 print "Player 4 Vs. Player 2"
 
     # def matchMaker(self, roUnd):
-    #     home = []
+    # home = []
     #     away = []
     #     matchQ = sorted(self.tournamentQ)
     #
@@ -235,8 +238,9 @@ class CramServer(Server):
     #                 if i != 0 and i <= roUnd:
     #                     for r in range(0, roUnd):
     #                         home.append(matchQ.pop(nGames - i - r))
-    #                         # Still working
+    #
 
+    # <<<<-------- Needs debugging ------->>>>>>>>
     def updateTStats(self, teamname, WorL, score, roUnd):
         if roUnd == 0:
             self.tournamentStat[teamname] = 0
@@ -269,7 +273,7 @@ class CramServer(Server):
                 try:
                     thread.start_new_thread(self.timer, ())
                 except:
-                    print "Time threading error"
+                    print 'Time threading error'
 
                 temp = True
                 for x in range(0, 5):
@@ -287,13 +291,14 @@ class CramServer(Server):
                                                   "mscore": game.p1score, "opscore": game.p0score})
                                 except:
                                     print "Player 1 cannot be found"
+                                    break
                                 try:
                                     game.p0.Send({"action": "gameover", "torf": True,
                                                   "tourn": True if self.tournamentMode else False,
                                                   "mscore": game.p0score, "opscore": game.p1score})
                                 except:
                                     print "player 2 cannot be found"
-                                break
+                                    break
                             if x is not 4 and not game.board[x][y] and not game.board[x + 1][y]:
                                 temp = False
                                 break
@@ -322,7 +327,7 @@ class CramServer(Server):
                 except:
                     print "Timer Error"
                 else:
-                    del game
+                    # del self.games[game.gameID]
                     break
                 if timer <= 0:
                     game.turn = 0 if game.turn == 1 else 1
@@ -332,7 +337,7 @@ class CramServer(Server):
                     except:
                         print("Wowzers")
                     else:
-                        del game
+                        # del self.games[game.gameID]
                         break
                     game.time = pygame.time.get_ticks()
 
@@ -425,25 +430,28 @@ class Game:
                         self.owner[y2][x2] = playerID
                         self.time = pygame.time.get_ticks()
                     else:
-                        self.invalidMove(playerID, data)
-                        print x1, y1, x2, y2
+                        self.invalidMove(playerID, x1, y1, x2, y2, data)
                 else:
-                    self.invalidMove(playerID, data)
-                    print x1, y1, x2, y2
+                    self.invalidMove(playerID, x1, y1, x2, y2, data)
             else:
-                self.invalidMove(playerID, data)
-                print x1, y1, x2, y2
+                self.invalidMove(playerID, x1, y1, x2, y2, data)
 
-    def invalidMove(self, playerID, data):
+
+    def invalidMove(self, playerID, x1, y1, x2, y2, data):
         if self.turn == 1:
-            self.p1.Send({"action": "invalidmove"})
+            self.p1.Send({"action": "invalidmove", "playerID": playerID,
+                          "x1": x1, "y1": y1, "x2": x2, "y2": y2})
+            print str(x1) + str(y1) + str(x2) + str(y2) + ":" + self.p0.teamname if \
+                self.turn == 0 else self.p1.teamname
         else:
-            self.p0.Send({"action": "invalidmove"})
-
+            self.p0.Send({"action": "invalidmove", "playerID": playerID,
+                          "x1": x1, "y1": y1, "x2": x2, "y2": y2})
+            print str(x1) + str(y1) + str(x2) + str(y2) + ":" + self.p0.teamname if \
+                self.turn == 0 else self.p1.teamname
 
 print "Starting Crunch-Platform..."
 cramServer = CramServer(localaddr=("localhost", 27000))
 while True:
     cramServer.tick()
-    # cramServer.Pump()
+    cramServer.Pump()
     sleep(0.01)

@@ -229,11 +229,11 @@ class CramClient(ConnectionListener):
 
                 i += 1
 
-    def drawUpgrade(self):
+    def drawUpgrade(self, smsg):
         self.screen.fill(0)
         self.screen.blit(self.gameroom, (0, 0))
         myfont = pygame.font.SysFont(None, 32)
-        msg = myfont.render("Please upgrade your version", 1, (255, 255, 255))
+        msg = myfont.render(smsg, 1, (255, 255, 255))
 
         self.screen.blit(msg, (135, 250))
 
@@ -362,7 +362,7 @@ class CramClient(ConnectionListener):
         y2 = result[2]
         x2 = result[3]
         connection.Send(
-            {"action": "place", "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+            {"action": "place", "x1": y1, "y1": x1, "x2": y2, "y2": x2,
              "playerID": self.playerID, "turn": self.turn,
              "gameID": self.gameID})
 
@@ -370,7 +370,7 @@ class CramClient(ConnectionListener):
         self.screen.blit(
             self.gameover if not self.didiwin else self.winningscreen, (0, 0))
         pygame.display.flip()
-        sleep(7)
+        sleep(4)
         if not self.tournamentMode:
             self.screen.blit(self.playagainimg, (150, 400))
             while 1:
@@ -394,7 +394,7 @@ class CramClient(ConnectionListener):
                              "playerID": self.playerID,
                              "gameID": self.gameID})
             self.reset()
-            sleep(7)
+            sleep(3)
             connection.Send({"action": "tournament",
                              "teamname": self.teamname,
                              "round": self.roUnd,
@@ -434,7 +434,7 @@ class CramClient(ConnectionListener):
             self.begingame = False
             self.tBegin = False
             self.tWaiting()
-            self.timer = 10
+            #self.timer = 10
 
 
     #######################################
@@ -453,6 +453,7 @@ class CramClient(ConnectionListener):
         exit()
 
     def Network_upgrade(self, data):
+        msg = data['msg']
         self.drawUpgrade()
         pygame.display.flip()
         sleep(10)

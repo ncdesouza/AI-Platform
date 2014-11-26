@@ -24,11 +24,6 @@ class CramClient(ConnectionListener):
         self.Connect((host, prt))
         print "Welcome to the Crunch-Platform client portal"
 
-        """
-        " << Enter your  team name when prompted >>
-        "  ** Please limit name to 4 characters **
-        "   *        to keep gui clean          *
-        """
         self.teamname = self.pyva.getTeamname()
         connection.Send({"action": "teamname",
                          "teamname": self.teamname,
@@ -36,7 +31,7 @@ class CramClient(ConnectionListener):
                          "version": self.version})
         print "Connecting to Crunch-Platform..."
 
-        self.timer = 0
+        self.timer = 90
         self.clock = pygame.time.Clock()
         self.clock.tick(60)
 
@@ -149,12 +144,10 @@ class CramClient(ConnectionListener):
                                  "round": self.roUnd, "WorL": None, "score": None})
                 sleep(1)
 
-
     def drawSelectScreen(self):
-        # self.screen.blit(self.home, (0, 0))
         self.screen.blit(self.gameroom, (0, 0))
         self.screen.blit(self.leaderboard, (389, 0))
-        #self.screen.blit(self.botimg, (100, 100))
+        self.screen.blit(self.botimg, (100, 100))
         self.screen.blit(self.greenplayer, (200, 100))
         self.screen.blit(self.tournament, (125, 160))
 
@@ -208,10 +201,6 @@ class CramClient(ConnectionListener):
             self.playerselect = True
         pygame.display.flip()
 
-        """ Screen Refresh Method """
-        # self.Send({"action": "getPlayers",
-        # "teamname": self.teamname})
-
         sleep(0.01)
 
     def drawPlayerboard(self):
@@ -229,11 +218,11 @@ class CramClient(ConnectionListener):
 
                 i += 1
 
-    def drawUpgrade(self):
+    def drawUpgrade(self, smsg):
         self.screen.fill(0)
         self.screen.blit(self.gameroom, (0, 0))
         myfont = pygame.font.SysFont(None, 32)
-        msg = myfont.render("Please upgrade your version", 1, (255, 255, 255))
+        msg = myfont.render(smsg, 1, (255, 255, 255))
 
         self.screen.blit(msg, (135, 250))
 
@@ -370,7 +359,7 @@ class CramClient(ConnectionListener):
         self.screen.blit(
             self.gameover if not self.didiwin else self.winningscreen, (0, 0))
         pygame.display.flip()
-
+        sleep(4)
         if not self.tournamentMode:
             self.screen.blit(self.playagainimg, (150, 400))
             while 1:
@@ -394,7 +383,7 @@ class CramClient(ConnectionListener):
                              "playerID": self.playerID,
                              "gameID": self.gameID})
             self.reset()
-
+            sleep(3)
             connection.Send({"action": "tournament",
                              "teamname": self.teamname,
                              "round": self.roUnd,
@@ -434,6 +423,7 @@ class CramClient(ConnectionListener):
             self.begingame = False
             self.tBegin = False
             self.tWaiting()
+            #self.timer = 10
 
 
     #######################################
@@ -452,6 +442,7 @@ class CramClient(ConnectionListener):
         exit()
 
     def Network_upgrade(self, data):
+        msg = data['msg']
         self.drawUpgrade()
         pygame.display.flip()
         sleep(10)
@@ -585,7 +576,7 @@ class CramClient(ConnectionListener):
         self.masterblock = pygame.image.load("./images/masterblock.png")
 
 
-cramClient = CramClient("192.168.2.146", 27000)
+cramClient = CramClient("localhost", 27000)
 while 1:
     if cramClient.update() == 1:
         break

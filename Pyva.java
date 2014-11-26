@@ -12,19 +12,19 @@ public class Pyva {
          pyva3 = new Player3();
          pyva4 = new Player4();
        }
-  public Player1 player0() {
+  public Player1 player1() {
          return pyva1;
   }
 
-  public Player2 player1() {
+  public Player2 player2() {
          return pyva2;
   }
 
-  public Player3Move player2() {
+  public Player3 player3() {
          return pyva3;
   }
 
-  public Player3Move player3() {
+  public Player4 player4() {
          return pyva4;
   }
        
